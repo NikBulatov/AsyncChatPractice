@@ -22,8 +22,7 @@ HEADERS = ["Изготовитель системы", "Название ОС", "
 
 
 def get_data():
-    main_data, manufacturers_list, os_names_list, codes_product_list, types_system_list = [], [], [], [], []
-    main_data.append(HEADERS)
+    main_data, manufacturers_list, os_names_list, codes_product_list, types_system_list = [HEADERS], [], [], [], []
 
     for i in range(1, 4):
         with open(f"info_{i}.txt", encoding="cp1251") as f:
