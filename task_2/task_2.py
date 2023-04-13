@@ -29,7 +29,6 @@ def write_order_to_json(item: str,
             "date": date
         })
         json.dump(orders, file_in, sort_keys=True, indent=4)
-        print(orders, type(orders))
 
 
 if __name__ == "__main__":
