@@ -1,52 +1,60 @@
 import json
 from socket import socket, AF_INET, SOCK_STREAM
 import sys
-import getopt
 
 
 def get_client_msg(msg: bytes):
-    return json.load(msg)
+    return eval(msg.decode("utf-8"))
 
 
 def parse_client_message(data: dict):
-    if "action" in data.keys() and data["action"] == "presence" and "time" in data.keys() \
-            and "user" in data.keys() and data["user"]["name"] == "Guest":
-        return json.dumps({"response": 200})
-    return json.dumps({
-        "response": 400,
-        "error": "Bad request"
-    })
+    try:
+        if "action" in data.keys() and data["action"] == "presence" and "time" in data.keys() \
+                and "user" in data.keys() and data["user"]["name"] == "Guest":
+            return json.dumps({"response": 200})
+        return json.dumps({
+            "response": 400,
+            "error": "Bad request"
+        })
+    except KeyError:
+        return json.dumps({
+            "response": 400,
+            "error": "Bad request"
+        })
 
 
-def parse_arguments(argv: list) -> dict:
-    arg_ip_addr = ""
-    arg_port = 7777
-    arg_help = "{0} -a <listened IP: default all IPs listened> -p <TCP port: 7777 default>".format(argv[0])
+def parse_arguments() -> dict:
+    default_listen_ip_addr = ''
+    default_port = 7777
 
     try:
-        opts, args = getopt.getopt(argv[1:], "ha:p:", ["help", "ip_addr=", "port="])
-    except Exception:
-        print(arg_help)
-        sys.exit(2)
-    else:
-        for opt, arg in opts:
-            match opt:
-                case "-h" | "--help":
-                    print(arg_help)
-                    sys.exit(2)
-                case "-a" | "--ip_addr":
-                    arg_ip_addr = arg
-                case "-p" | "--port":
-                    if int(arg) < 1024 or int(arg) > 65535:
-                        arg_port = 7777
-                    else:
-                        arg_port = arg
-    finally:
-        return {"ip_addr": arg_ip_addr, "port": arg_port}
+        if '-p' in sys.argv:
+            listen_port = int(sys.argv[sys.argv.index('-p') + 1])
+        else:
+            listen_port = default_port
+        if listen_port < 1024 or listen_port > 65535:
+            raise ValueError
+    except IndexError:
+        listen_port = default_port
+    except ValueError:
+        print('Server port is not valid')
+        sys.exit(1)
+
+    try:
+        if '-i' in sys.argv:
+            listen_ip_addr = sys.argv[sys.argv.index('-i') + 1]
+        else:
+            listen_ip_addr = default_listen_ip_addr
+
+    except IndexError:
+        print('Listen IP address is not valid')
+        sys.exit(1)
+
+    return {"ip_addr": listen_ip_addr, "port": listen_port}
 
 
 def main():
-    params = parse_arguments(sys.argv)
+    params = parse_arguments()
 
     with socket(AF_INET, SOCK_STREAM) as s:
         s.bind((
@@ -62,8 +70,8 @@ def main():
                 client_msg = get_client_msg(data)
                 response = parse_client_message(client_msg)
                 client.send(response.encode("utf-8"))
-            except Exception:
-                print("Pizdec!")
+            except BrokenPipeError:
+                print("Internal error!")
 
 
 if __name__ == "__main__":

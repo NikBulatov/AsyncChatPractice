@@ -1,4 +1,3 @@
-import getopt
 import json
 from socket import socket, AF_INET, SOCK_STREAM
 import sys
@@ -17,7 +16,7 @@ def create_presence(account_name='Guest'):
 
 
 def get_message(data: bytes):
-    return json.load(data)
+    return eval(data.decode("utf-8"))
 
 
 def process_answer(message: dict):
@@ -28,33 +27,26 @@ def process_answer(message: dict):
     raise ValueError
 
 
-def parse_arguments(argv: list) -> dict:
-    arg_ip_addr = argv[1]
-    arg_port = 7777
-    arg_help = "{0} <server IP> [<server TCP port: 7777 default>]".format(argv[0])
+def parse_arguments() -> dict:
+    default_server_ip_addr = '127.0.0.1'
+    default_server_port = 7777
 
     try:
-        opts, args = getopt.getopt(argv[1:], "h", ["help"])
-        if not arg_ip_addr:
-            raise ValueError("server IP is needed")
+        server_ip_addr = sys.argv[1]
+        server_port = int(sys.argv[2])
+        if server_port < 1024 or server_port > 65535:
+            raise ValueError("Server port is not valid")
+    except IndexError:
+        server_ip_addr = default_server_ip_addr
+        server_port = default_server_port
     except ValueError:
-        print(arg_help)
         sys.exit(2)
-    else:
-        for opt, arg in opts:
-            if opt in ("-h", "--help"):
-                print(arg_help)
-                sys.exit(2)
-        if argv[2]:
-            arg_port = argv[2]
-            if arg_port < 1024 or arg_port > 65535:
-                arg_port = 7777
-    finally:
-        return {"ip_addr": arg_ip_addr, "port": arg_port}
+
+    return {"ip_addr": server_ip_addr, "port": server_port}
 
 
 def main():
-    params = parse_arguments(sys.argv)
+    params = parse_arguments()
     with socket(AF_INET, SOCK_STREAM) as s:
         s.connect((
             params.get("ip_addr"),
