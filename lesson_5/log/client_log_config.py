@@ -2,21 +2,22 @@ import os
 import logging
 import sys
 
-LOGGER = logging.getLogger("client")
-LOGGER.setLevel(logging.DEBUG)
+sys.path.append("../")
 
 FORMATTER = logging.Formatter('%(levelname)s %(asctime)s %(filename)s %(message)s')
 
 STREAM_HANDLER = logging.StreamHandler(sys.stderr)
-STREAM_HANDLER.setLevel(logging.ERROR)
 STREAM_HANDLER.setFormatter(FORMATTER)
+STREAM_HANDLER.setLevel(logging.ERROR)
 
 LOG_PATH = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(LOG_PATH, "client.log")
 
-LOG_FILE = logging.FileHandler(PATH, encoding="utf-8")
+LOG_FILE = logging.FileHandler(PATH, encoding="utf8")
 LOG_FILE.setFormatter(FORMATTER)
 
+LOGGER = logging.getLogger("client")
+LOGGER.setLevel(logging.DEBUG)
 LOGGER.addHandler(LOG_FILE)
 LOGGER.addHandler(STREAM_HANDLER)
 
