@@ -1,5 +1,6 @@
 import socket
 import sys
+import log.server_log_config
 import logging
 import json
 from extensions import (ACTION, ACCOUNT_NAME, RESPONSE, MAX_CONNECTIONS,
