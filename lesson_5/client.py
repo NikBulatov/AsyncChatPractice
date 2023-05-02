@@ -2,6 +2,7 @@ import sys
 import json
 import socket
 import time
+import log.client_log_config
 import logging
 from extensions import (ACTION, PRESENCE, TIME, USER, ACCOUNT_NAME,
                         RESPONSE, ERROR, DEFAULT_IP_ADDRESS, DEFAULT_PORT,
