@@ -162,3 +162,5 @@ cython_debug/
 
 # project examples
 examples
+lesson_2/task_1/*.txt
+lesson_2/task_2/*.json
