@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from socket import socket, AF_INET, SOCK_STREAM
 
 from services import (get_message, process_answer,
@@ -13,7 +12,6 @@ LOGGER = logging.getLogger("client")
 def main() -> None:
     listen_socket = parse_client_arguments()
     for _ in range(10):
-        time.sleep(0.5)
         with socket(AF_INET, SOCK_STREAM) as transport:
             transport.connect(listen_socket)
             request_data = create_presence()

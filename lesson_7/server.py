@@ -1,9 +1,11 @@
 import json
 import logging
+import time
+
 import select
 
-from variables import RESPONSE, ERROR
-from services import (read_requests, write_responses, parse_server_arguments,
+from variables import MESSAGE_TEXT, TIME, SENDER, ACTION, MESSAGE
+from services import (parse_server_arguments,
                       init_listen_socket, process_client_message,
                       get_message, send_message)
 import logs.server_log_config
@@ -13,6 +15,8 @@ LOGGER = logging.getLogger("server")
 
 def main() -> None:
     CLIENTS = []
+    MESSAGES = []
+
     listen_socket = parse_server_arguments()
 
     transport = init_listen_socket(listen_socket)
@@ -29,32 +33,43 @@ def main() -> None:
         else:
             print(f"Received request by {client_address}")
             CLIENTS.append(client)
-            try:
-                message_from_client = get_message(client)
-                LOGGER.debug(f"Got message: {message_from_client}")
-                print(message_from_client)
 
-                response = process_client_message(message_from_client)
-                LOGGER.debug(f"Send response: {response}")
-
-                send_message(client, response)
-                LOGGER.debug(f"Connection with {client_address} is closing")
-            except (ValueError, json.JSONDecodeError):
-                LOGGER.error(f"Got invalid data by {client_address}")
-                response = {
-                    RESPONSE: 400,
-                    ERROR: "Bad Request"
-                }
-                send_message(client, response)
-        finally:
-            r, w, e = [], [], []
+            recv_data, send_data, errors = [], [], []
             try:
-                r, w, e = select.select([], CLIENTS, [], 10)
+                recv_data, send_data, errors = select.select(CLIENTS, CLIENTS,
+                                                             [],
+                                                             10)
             except OSError:
                 print("\nA client close connection")
-            requests = read_requests(r, CLIENTS)
-            if requests:
-                write_responses(requests, w, CLIENTS)
+
+            if recv_data:
+                for client_with_message in recv_data:
+                    try:
+                        process_client_message(get_message(client_with_message),
+                                               MESSAGES, client_with_message)
+                    except Exception as e:
+                        print(e)
+                        LOGGER.info(
+                            f'Client {client_with_message.getpeername()} '
+                            f'closed connection.')
+                        CLIENTS.remove(client_with_message)
+
+            if MESSAGES and send_data:
+                message = {
+                    ACTION: MESSAGE,
+                    SENDER: MESSAGES[0][0],
+                    TIME: time.time(),
+                    MESSAGE_TEXT: MESSAGES[0][1]
+                }
+                del MESSAGES[0]
+                for waiting_client in send_data:
+                    try:
+                        send_message(waiting_client, message)
+                    except Exception as e:
+                        print(e)
+                        LOGGER.info(
+                            f'Client {waiting_client.getpeername()} closed connection.')
+                        CLIENTS.remove(waiting_client)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,8 @@ import time
 
 from variables import (ACTION, ACCOUNT_NAME, RESPONSE, MAX_CONNECTIONS,
                        PRESENCE, TIME, USER, ERROR, DEFAULT_PORT, ENCODING,
-                       MAX_PACKAGE_LENGTH, DEFAULT_IP_ADDRESS)
+                       MAX_PACKAGE_LENGTH, DEFAULT_IP_ADDRESS, MESSAGE,
+                       MESSAGE_TEXT, SENDER)
 import inspect
 import sys
 import logging
@@ -34,6 +35,18 @@ def log(func: callable) -> callable:
         return result
 
     return wrapper
+
+
+@log
+def create_message(sock, account_name='Guest'):
+    message_dict = {
+        ACTION: MESSAGE,
+        TIME: time.time(),
+        ACCOUNT_NAME: account_name,
+        MESSAGE_TEXT: MESSAGE_TEXT
+    }
+    LOGGER.debug(f'Message created: {message_dict}')
+    return message_dict
 
 
 @log
@@ -67,21 +80,24 @@ def init_listen_socket(sock_pair: tuple,
 
 
 @log
-def process_client_message(message) -> dict:
+def process_client_message(message: dict, messages: list,
+                           client: socket) -> None:
     """
-    Function to process a client message and return response.
+    Function to process a client message and send response.
 
-    :param message:
-    :return response: dict
+    :param message: dict
+    :param messages: list
+    :param client: socket
     """
     LOGGER.debug(f"Parse client message {message}")
     if ACTION in message and message[ACTION] == PRESENCE and TIME in message \
             and USER in message and message[USER][ACCOUNT_NAME] == "Guest":
-        return {RESPONSE: 200}
-    return {
-        RESPONSE: 400,
-        ERROR: "Bad Request"
-    }
+        send_message(client, {RESPONSE: 200})
+    elif ACTION in message and message[ACTION] == MESSAGE and TIME in message \
+            and MESSAGE_TEXT in message:
+        messages.append((message[ACCOUNT_NAME], message[MESSAGE_TEXT]))
+    else:
+        send_message(client, {RESPONSE: 400, ERROR: "Bad Request"})
 
 
 @log
@@ -181,7 +197,8 @@ def write_responses(requests: dict, w_clients: list, all_clients: list) -> None:
                 # Эхо-ответ сделаем чуть непохожим на оригинал
                 sock.send(resp.upper())
             except Exception as e:  # Сокет недоступен, клиент отключился
-                print(f'Client {sock.fileno()} {sock.getpeername()} closed connection')
+                print(
+                    f'Client {sock.fileno()} {sock.getpeername()} closed connection')
                 sock.close()
                 all_clients.remove(sock)
 
@@ -230,3 +247,15 @@ def process_answer(message) -> str:
             return "200 : OK"
         return f"400 : {message[ERROR]}"
     raise ValueError
+
+
+@log
+def message_from_server(message):
+    if ACTION in message and message[ACTION] == MESSAGE and \
+            SENDER in message and MESSAGE_TEXT in message:
+        print(f'Received message from user '
+              f'{message[SENDER]}:\n{message[MESSAGE_TEXT]}')
+        LOGGER.info(f'Received message from user '
+                    f'{message[SENDER]}:\n{message[MESSAGE_TEXT]}')
+    else:
+        LOGGER.error(f'Received incorrect message from server: {message}')

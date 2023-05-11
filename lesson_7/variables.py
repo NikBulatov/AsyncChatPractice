@@ -14,3 +14,7 @@ ACCOUNT_NAME = "name"
 PRESENCE = "presence"
 RESPONSE = "response"
 ERROR = "error"
+MESSAGE = 'message'
+MESSAGE_TEXT = "Test message text"
+SENDER = 'sender'
+
