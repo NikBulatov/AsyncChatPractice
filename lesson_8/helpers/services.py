@@ -22,12 +22,6 @@ def get_logger():
     return logger
 
 
-# if sys.argv[0].find("client") == -1:
-#     LOGGER = logging.getLogger("server")
-# else:
-#     LOGGER = logging.getLogger("client")
-
-
 LOGGER = get_logger()
 
 

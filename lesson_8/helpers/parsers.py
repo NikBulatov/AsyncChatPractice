@@ -6,11 +6,6 @@ from .services import log, get_logger
 
 LOGGER = get_logger()
 
-if sys.argv[0].find("client") == -1:
-    LOGGER = logging.getLogger("server")
-else:
-    LOGGER = logging.getLogger("client")
-
 
 @log
 def _validate_port(listen_port: int) -> None:

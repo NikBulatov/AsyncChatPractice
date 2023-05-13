@@ -22,8 +22,8 @@ If no address, await connections by anyone""")
     transport.bind(listen_socket)
     transport.settimeout(0.5)
 
-    CLIENTS = []
-    MESSAGES = []
+    clients = []
+    messages = []
 
     transport.listen(MAX_CONNECTIONS)
 
@@ -34,13 +34,13 @@ If no address, await connections by anyone""")
             print("Timeout expired")
         else:
             LOGGER.info(f"Connection established with {client_address}")
-            CLIENTS.append(client)
+            clients.append(client)
 
         recv_data, send_data, errors = [], [], []
         try:
-            if CLIENTS:
-                recv_data, send_data, errors = select.select(CLIENTS,
-                                                             CLIENTS, [], 0)
+            if clients:
+                recv_data, send_data, errors = select.select(clients,
+                                                             clients, [], 0)
         except OSError:
             print("\nA client close connection")
 
@@ -49,22 +49,22 @@ If no address, await connections by anyone""")
                 try:
                     process_client_message(
                         get_message(client_with_message),
-                        MESSAGES, client_with_message)
+                        messages, client_with_message)
                 except Exception as e:
                     print(e)
                     LOGGER.info(
                         f"Client {client_with_message.getpeername()} "
                         f"closed connection.")
-                    CLIENTS.remove(client_with_message)
+                    clients.remove(client_with_message)
 
-        if MESSAGES and send_data:
+        if messages and send_data:
             message = {
                 ACTION: MESSAGE,
-                SENDER: MESSAGES[0][0],
+                SENDER: messages[0][0],
                 TIME: time.time(),
-                MESSAGE_TEXT: MESSAGES[0][1]
+                MESSAGE_TEXT: messages[0][1]
             }
-            del MESSAGES[0]
+            del messages[0]
             for waiting_client in send_data:
                 try:
                     send_message(waiting_client, message)
@@ -72,7 +72,7 @@ If no address, await connections by anyone""")
                     print(e)
                     LOGGER.info(f"Client {waiting_client.getpeername()} "
                                 f"closed connection.")
-                    CLIENTS.remove(waiting_client)
+                    clients.remove(waiting_client)
 
 
 if __name__ == "__main__":
