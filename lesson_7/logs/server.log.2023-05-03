@@ -1,0 +1,8 @@
+DEBUG 2023-05-03 21:02:28,107 decorators.py "parse_arguments" function with arguments (), {} was called from "main" function, from module __main__
+INFO 2023-05-03 21:02:28,109 server.py Running server, port fot connection: 7777, await connections by address: . If no address, await connections by anyone
+INFO 2023-05-03 21:02:35,201 server.py Connection established with ("127.0.0.1", 53226)
+DEBUG 2023-05-03 21:02:35,202 server.py Got message: {"action": "presence", "time": 1683136955.2010775, "user": {"name": "Guest"}}
+DEBUG 2023-05-03 21:02:35,203 server.py Parse client message {"action": "presence", "time": 1683136955.2010775, "user": {"name": "Guest"}}
+DEBUG 2023-05-03 21:02:35,204 decorators.py "process_client_message" function with arguments ({"action": "presence", "time": 1683136955.2010775, "user": {"name": "Guest"}},), {} was called from "main" function, from module __main__
+DEBUG 2023-05-03 21:02:35,223 server.py Send response: {"response": 200}
+DEBUG 2023-05-03 21:02:35,223 server.py Connection with ("127.0.0.1", 53226) is closing
