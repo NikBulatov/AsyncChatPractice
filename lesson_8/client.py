@@ -1,32 +1,40 @@
 import json
 import logging
 import sys
+import time
 from socket import socket, AF_INET, SOCK_STREAM
+from threading import Thread
+
 import logs.client_log_config
-from helpers.parsers import parse_client_arguments
-from helpers.services import (process_server_response,
-                              get_message,
-                              create_presence,
-                              send_message, create_message,
-                              message_from_server)
-from helpers.errors import ServerError, RequiredFieldMissingError
+from services.parsers import parse_client_arguments
+from services.client_helpers import (process_server_response, create_presence,
+                                     send_message, message_from_server,
+                                     cmd_interface)
+from services.common import get_message
+from services.errors import ServerError, RequiredFieldMissingError
 
 LOGGER = logging.getLogger("client")
 
 
 def main() -> None:
-    server_address, server_port, client_mode = parse_client_arguments()
+    server_address, server_port, account_name = parse_client_arguments()
     listen_socket = (server_address, server_port)
+
+    if not account_name:
+        account_name = input(
+            "Input account name due to current name doesn't exist:\n\r")
 
     LOGGER.info(f"""Started client with parameters:
     - server address: {server_address},
     - server port: {server_port},
-    - mode: {client_mode}""")
+    - account name: {account_name}""")
     try:
         transport = socket(AF_INET, SOCK_STREAM)
         transport.connect(listen_socket)
-        send_message(transport, create_presence())
+
+        send_message(transport, create_presence(account_name))
         LOGGER.debug(f"Send request to server: {listen_socket[0]}")
+
         answer = process_server_response(get_message(transport))
         LOGGER.info(f"A connection to the server has been established. "
                     f"Server response: {answer}")
@@ -43,42 +51,27 @@ def main() -> None:
             f"A required field is missing in the server response: "
             f"{missing_error.missing_field}")
         sys.exit(1)
-    except ConnectionRefusedError:
+    except (ConnectionRefusedError, ConnectionError):
         LOGGER.critical(
             f"Failed to connect to server {server_address}:{server_port}, "
             f"the destination source denied the connection request.")
         sys.exit(1)
-    except (ValueError, json.JSONDecodeError):
-        LOGGER.error("Can not decode server response")
-        print("Can not decode server message")
     else:
-        match client_mode:
-            case "send":
-                print("Mode - send messages.")
-            case "listen":
-                print("Mode - received messages.")
+        receiver = Thread(target=message_from_server, args=(transport,
+                                                            account_name))
+        receiver.daemon = True
+        receiver.start()
+
+        sender = Thread(target=cmd_interface, args=(transport, account_name))
+        sender.daemon = True
+        sender.start()
+        LOGGER.debug("Threads started")
+
         while True:
-            match client_mode:
-                case "send":
-                    try:
-                        send_message(transport, create_message(transport))
-                    except (ConnectionResetError,
-                            ConnectionError,
-                            ConnectionAbortedError):
-                        LOGGER.error(
-                            f"A connection with server "
-                            f"with address: {server_address} was lost.")
-                        sys.exit(1)
-                case "listen":
-                    try:
-                        message_from_server(get_message(transport))
-                    except (ConnectionResetError,
-                            ConnectionError,
-                            ConnectionAbortedError):
-                        LOGGER.error(
-                            f"A connection with server "
-                            f"with address: {server_address} was lost.")
-                        sys.exit(1)
+            time.sleep(1.05)
+            if receiver.is_alive() and sender.is_alive():
+                continue
+            break
 
 
 if __name__ == "__main__":

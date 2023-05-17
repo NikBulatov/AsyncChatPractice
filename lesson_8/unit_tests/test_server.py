@@ -2,10 +2,10 @@
 # import unittest
 #
 # sys.path.append("../")
-# from helpers.variables import (RESPONSE, ERROR, USER, ACCOUNT_NAME, TIME,
+# from services.variables import (RESPONSE, ERROR, USER, ACCOUNT_NAME, TIME,
 #                                ACTION,
 #                                PRESENCE)
-# from helpers.services import process_client_message
+# from services.services import process_client_message
 #
 #
 # class TestServer(unittest.TestCase):

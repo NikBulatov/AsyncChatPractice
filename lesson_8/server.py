@@ -1,12 +1,11 @@
 import logging
 from socket import socket, AF_INET, SOCK_STREAM
-import time
-import select
+from select import select
 import logs.server_log_config
-from helpers.parsers import parse_server_arguments
-from helpers.variables import (MESSAGE_TEXT, TIME, SENDER, ACTION, MESSAGE,
-                               MAX_CONNECTIONS)
-from helpers.services import process_client_message, get_message, send_message
+from services.common import get_message
+from services.parsers import parse_server_arguments
+from services.variables import SENDER, MAX_CONNECTIONS, RECEIVER
+from services.server_helpers import process_client_message, process_message
 
 LOGGER = logging.getLogger("server")
 
@@ -24,6 +23,7 @@ If no address, await connections by anyone""")
 
     clients = []
     messages = []
+    registered_accounts = {}
 
     transport.listen(MAX_CONNECTIONS)
 
@@ -31,7 +31,7 @@ If no address, await connections by anyone""")
         try:
             client, client_address = transport.accept()
         except OSError:
-            print("Timeout expired")
+            pass
         else:
             LOGGER.info(f"Connection established with {client_address}")
             clients.append(client)
@@ -39,17 +39,17 @@ If no address, await connections by anyone""")
         recv_data, send_data, errors = [], [], []
         try:
             if clients:
-                recv_data, send_data, errors = select.select(clients,
-                                                             clients, [], 0)
+                recv_data, send_data, errors = select(clients,
+                                                      clients, [], 0)
         except OSError:
             print("\nA client close connection")
 
         if recv_data:
             for client_with_message in recv_data:
                 try:
-                    process_client_message(
-                        get_message(client_with_message),
-                        messages, client_with_message)
+                    process_client_message(get_message(client_with_message),
+                                           messages, client_with_message,
+                                           clients, registered_accounts)
                 except Exception as e:
                     print(e)
                     LOGGER.info(
@@ -57,22 +57,16 @@ If no address, await connections by anyone""")
                         f"closed connection.")
                     clients.remove(client_with_message)
 
-        if messages and send_data:
-            message = {
-                ACTION: MESSAGE,
-                SENDER: messages[0][0],
-                TIME: time.time(),
-                MESSAGE_TEXT: messages[0][1]
-            }
-            del messages[0]
-            for waiting_client in send_data:
-                try:
-                    send_message(waiting_client, message)
-                except Exception as e:
-                    print(e)
-                    LOGGER.info(f"Client {waiting_client.getpeername()} "
-                                f"closed connection.")
-                    clients.remove(waiting_client)
+        for message in messages:
+            try:
+                process_message(message, registered_accounts, send_data)
+            except Exception as e:
+                print(e)
+                LOGGER.info(f"Connection with client {message[SENDER]}"
+                            f" is lost")
+                clients.remove(registered_accounts[message[RECEIVER]])
+                del registered_accounts[message[RECEIVER]]
+        messages.clear()
 
 
 if __name__ == "__main__":

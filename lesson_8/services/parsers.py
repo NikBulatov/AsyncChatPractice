@@ -2,7 +2,7 @@ import argparse
 import sys
 import logging
 from .variables import DEFAULT_IP_ADDRESS, DEFAULT_PORT
-from .services import log, get_logger
+from .common import log, get_logger
 
 LOGGER = get_logger()
 
@@ -26,20 +26,15 @@ def parse_client_arguments() -> tuple:
     parser = argparse.ArgumentParser()
     parser.add_argument("addr", default=DEFAULT_IP_ADDRESS, nargs="?")
     parser.add_argument("port", default=DEFAULT_PORT, type=int, nargs="?")
-    parser.add_argument("-m", "--mode", default="listen", nargs="?")
+    parser.add_argument("-n", "--name", default=None, nargs="?")
     argspace = parser.parse_args(sys.argv[1:])
     server_address = argspace.addr
     server_port = argspace.port
-    client_mode = argspace.mode
+    account_name = argspace.name
 
     _validate_port(server_port)
 
-    if client_mode not in ("listen", "send"):
-        LOGGER.critical(f"Invalid mode is specified {client_mode}, "
-                        f"allowed modes: 'listen' , 'send'")
-        sys.exit(1)
-
-    return server_address, server_port, client_mode
+    return server_address, server_port, account_name
 
 
 @log
