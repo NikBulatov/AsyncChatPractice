@@ -1,28 +1,24 @@
-import subprocess
+from subprocess import Popen, CREATE_NEW_CONSOLE
 
 PROCESSES = []
 
 
 def main():
     while True:
-        action = input(f"""Выберите действие:
-    q - выход;
-    s - запустить сервер и клиенты;
-    x - закрыть все окна: """)
+        action = input("""Actions:
+    q - quit;
+    r - run server and clients;
+    t - terminate all consoles:\n\r""")
         match action:
             case "q":
                 break
-            case "s":
-                PROCESSES.append(
-                    subprocess.Popen(
-                        "python server.py",
-                        creationflags=subprocess.CREATE_NEW_CONSOLE))
+            case "r":
+                PROCESSES.append(Popen("python server.py",
+                                       creationflags=CREATE_NEW_CONSOLE))
                 for i in range(1, 3):
-                    PROCESSES.append(
-                        subprocess.Popen(
-                            f"python client.py -n user_{i}",
-                            creationflags=subprocess.CREATE_NEW_CONSOLE))
-            case "x":
+                    PROCESSES.append(Popen(f"python client.py -n user_{i}",
+                                           creationflags=CREATE_NEW_CONSOLE))
+            case "t":
                 while PROCESSES:
                     victim = PROCESSES.pop()
                     victim.kill()
