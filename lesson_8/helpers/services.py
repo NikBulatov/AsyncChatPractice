@@ -58,11 +58,12 @@ def create_message(sock: socket, account_name: str = 'Guest') -> dict:
         sock.close()
         LOGGER.info("Completion of work on the user's command.")
         sys.exit(0)
+
     message_dict = {
         ACTION: MESSAGE,
         TIME: time.time(),
         ACCOUNT_NAME: account_name,
-        MESSAGE_TEXT: MESSAGE_TEXT
+        MESSAGE_TEXT: message
     }
     LOGGER.debug(f'Message created: {message_dict}')
     return message_dict
@@ -162,7 +163,7 @@ def process_server_response(message: dict) -> str:
 
 
 @log
-def message_from_server(message: dict) -> None:
+def message_from_server(message: dict, username: str) -> None:
     """
     Handler of messages from other users coming from the server
     :param message: dict
@@ -171,7 +172,7 @@ def message_from_server(message: dict) -> None:
     if ACTION in message and message[ACTION] == MESSAGE and \
             SENDER in message and MESSAGE_TEXT in message:
         print(f"Received message from user "
-              f"{message[SENDER]}:\n{message[MESSAGE_TEXT]}")
+              f"\"{message[SENDER]}\":\n\"{message[MESSAGE_TEXT]}\"")
         LOGGER.info(f"Received message from user "
                     f"{message[SENDER]}:\n{message[MESSAGE_TEXT]}")
     else:
