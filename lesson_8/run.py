@@ -1,9 +1,8 @@
 from subprocess import Popen, CREATE_NEW_CONSOLE
 
-PROCESSES = []
-
 
 def main():
+    PROCESSES = []
     while True:
         action = input("""Actions:
     q - quit;
