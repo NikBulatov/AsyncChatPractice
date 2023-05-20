@@ -5,6 +5,11 @@ from task_1 import host_ping
 
 
 def _validate_string(value: str) -> bool:
+    """
+    Validate a string using regex
+    :param value:
+    :return:
+    """
     pattern = re.compile(r"^((\d{1,3}\.){3}\d{1,3})$")
     return bool(pattern.match(value))
 
