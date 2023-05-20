@@ -15,7 +15,8 @@ def _ping(host, timeout: int = 250, amount: int = 1) -> Popen:
     :return:
     """
     param = '-n' if system().lower() == 'windows' else '-c'
-    process = Popen(f"ping {host} -w {timeout} {param} {amount}", stdout=PIPE)
+    process = Popen(f"ping {host} -w {timeout} {param} {amount}", stdout=PIPE,
+                    shell=False)
     return process
 
 
@@ -42,7 +43,7 @@ def host_ping(endpoints: Iterable[str | IPv4Address]) -> dict:
     :param endpoints:
     :return:
     """
-    results = {"reachable": [], "unreachable": []}
+    results = {"Reachable": [], "Unreachable": []}
 
     for addr in endpoints:
         host = _get_ip_addr(addr)
@@ -51,10 +52,10 @@ def host_ping(endpoints: Iterable[str | IPv4Address]) -> dict:
         return_code = process.returncode
         match return_code:
             case 0:
-                results["reachable"] += [host]
+                results["Reachable"] += [host]
                 res_output = f"{host} - Узел доступен"
             case _:
-                results["unreachable"] += [host]
+                results["Unreachable"] += [host]
                 res_output = f"{host} - Узел не доступен"
         print(res_output)
     return results
