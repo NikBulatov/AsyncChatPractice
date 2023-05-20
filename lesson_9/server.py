@@ -4,40 +4,29 @@ import sys
 from socket import socket, AF_INET, SOCK_STREAM
 from select import select
 import logs.server_log_config
-from services.common import get_message, BaseObject
+from services.common import BaseSocket
 from services.variables import *
 
 
-class Server(BaseObject):
+class ServerSocket(BaseSocket):
     CLIENTS = []
     LOGGER = logging.getLogger("server")
     MESSAGES = []
     REGISTERED_ACCOUNTS = {}
 
-    def __init__(self,
-                 listen_addr: str = "",
-                 listen_port: int = DEFAULT_PORT,
+    def __init__(self, listen_addr: str = "", listen_port: int = DEFAULT_PORT,
                  timeout: float = 0.5,
                  max_connections: int = MAX_CONNECTIONS):
-        self.transport = socket(AF_INET, SOCK_STREAM)
-        self.listen_socket = self.__parse_server_arguments(listen_port,
-                                                           listen_addr)
-        self.timeout = timeout
-        self.max_connections = max_connections
-
-    def _start(self):
-        self.transport.bind(self.listen_socket)
-        self.transport.settimeout(0.5)
-        self.transport.listen(MAX_CONNECTIONS)
-        return self.transport
+        super().__init__(timeout, max_connections)
+        self.listen_socket = self.__parse_arguments(listen_port,
+                                                    listen_addr)
 
     def run(self):
-        self.transport = self._start()
+        self.transport = self._start(self.listen_socket)
         self.LOGGER.info(
-            f"""Running server,
-                    - port for connection: {self.listen_socket[1]};"
-                    - await connections by address: {self.listen_socket[0]}.
-                If no address, await connections by anyone""")
+            f"""Running server:
+    - port for connection: {self.listen_socket[1]};"
+    - await connections by address: {self.listen_socket[0]}. If no address, await connections by anyone""")
         while True:
             try:
                 client, client_address = self.transport.accept()
@@ -60,7 +49,7 @@ class Server(BaseObject):
                 for client_with_message in recv_data:
                     try:
                         self._process_client_message(
-                            get_message(client_with_message),
+                            self.get_message(client_with_message),
                             self.MESSAGES, client_with_message,
                             self.CLIENTS, self.REGISTERED_ACCOUNTS)
                     except Exception as e:
@@ -157,7 +146,7 @@ class Server(BaseObject):
                 f"User {message[RECEIVER]} is not registered on server, "
                 f"message isn't sent")
 
-    def __parse_server_arguments(self, port, addr) -> tuple:
+    def __parse_arguments(self, port, addr) -> tuple:
         """
         Function to parse arguments from a command line.
         It returns tuple with passed ip address and port
@@ -177,7 +166,7 @@ class Server(BaseObject):
 
 
 def main() -> None:
-    server = Server()
+    server = ServerSocket()
     server.run()
 
 
