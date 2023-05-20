@@ -25,9 +25,8 @@ def host_range_ping(first_addr: str, amount: int) -> dict:
     if _validate_string(first_addr):
         last_octet = int(first_addr.split('.')[-1])
         if (last_octet + amount) < 254:
-            result = host_ping(
+            return host_ping(
                 [ipaddress.ip_address(first_addr) + i for i in range(amount)])
-            return result
         else:
             raise ValueError("Invalid amount of addresses")
     else:
