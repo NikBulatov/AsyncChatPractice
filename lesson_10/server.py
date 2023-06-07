@@ -1,16 +1,16 @@
 import logging
 from select import select
 from socket import socket, AF_INET, SOCK_STREAM
-from descriptors import Port
+from lesson_10.services.descriptors import Port
 from services.variables import *
-from metaclasses import ServerMaker
+from lesson_10.services.metaclasses import ServerVerifier
 from services.parsers import parse_server_arguments
 from services.common import get_message, send_message
 
 LOGGER = logging.getLogger('server')
 
 
-class Server(metaclass=ServerMaker):
+class Server(metaclass=ServerVerifier):
     port = Port()
 
     def __init__(self, listen_address, listen_port):
@@ -85,7 +85,7 @@ class Server(metaclass=ServerMaker):
                 self.names[message[RECEIVER]] not in listen_socks:
             raise ConnectionError
         else:
-            LOGGER.error(f"User {message[RECEIVER]} isn't registered,"
+            LOGGER.error(f"User \"{message[RECEIVER]}\" isn't registered,"
                          f" message isn't send")
 
     def process_client_message(self, message, client):

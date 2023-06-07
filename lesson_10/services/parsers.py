@@ -24,7 +24,7 @@ def parse_client_arguments() -> tuple:
     :return: dict
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("addr", default=DEFAULT_IP_ADDRESS, nargs="?")
+    parser.add_argument("addr", default="127.0.0.1", nargs="?")
     parser.add_argument("port", default=DEFAULT_PORT, type=int, nargs="?")
     parser.add_argument("-n", "--name", default=None, nargs="?")
     argspace = parser.parse_args(sys.argv[1:])

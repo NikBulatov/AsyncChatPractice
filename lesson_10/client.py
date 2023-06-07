@@ -4,9 +4,8 @@ import socket
 import logging
 import threading
 from services.errors import *
-import logs.client_log_config
 from services.variables import *
-from metaclasses import ClientMaker
+from lesson_10.services.metaclasses import ClientVerifier
 from services.parsers import parse_client_arguments
 from services.common import send_message, get_message
 from services.client_helpers import process_server_response, create_presence
@@ -14,7 +13,7 @@ from services.client_helpers import process_server_response, create_presence
 LOGGER = logging.getLogger("client")
 
 
-class ClientSender(threading.Thread, metaclass=ClientMaker):
+class ClientSender(threading.Thread, metaclass=ClientVerifier):
     def __init__(self, account_name, sock):
         self.account_name = account_name
         self.sock = sock
@@ -78,7 +77,7 @@ class ClientSender(threading.Thread, metaclass=ClientMaker):
         print("exit - quit the program")
 
 
-class ClientReader(threading.Thread, metaclass=ClientMaker):
+class ClientReader(threading.Thread, metaclass=ClientVerifier):
     def __init__(self, account_name, sock):
         self.account_name = account_name
         self.sock = sock
