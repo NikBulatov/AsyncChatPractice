@@ -1,41 +1,38 @@
-from os import getenv
-import sqlalchemy
-from dotenv import load_dotenv
+from datetime import datetime
 from sqlalchemy import String, Text, DateTime, Integer, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-load_dotenv(".env")
-
-engine = sqlalchemy.create_engine(getenv("DATABASE_URI"), echo=True)
 
 
 class Base(DeclarativeBase):
     pass
 
 
-class Client(Base):
-    __tablename__ = "client"
+class Clients(Base):
+    __tablename__ = "clients"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    login: Mapped[str] = mapped_column(String(50))
-    info: Mapped[str] = mapped_column(Text())
+    username: Mapped[str] = mapped_column(String(50))
+    last_login: Mapped[DateTime] = mapped_column(DateTime(),
+                                                 default=datetime.now())
+    info: Mapped[str] = mapped_column(Text(), nullable=True)
 
 
-class ClientHistory(Base):
-    __tablename__ = "client_history"
+class ClientsHistory(Base):
+    __tablename__ = "clients_history"
 
-    id: Mapped[int] = mapped_column(ForeignKey("client.id"), primary_key=True)
-    last_login: Mapped[DateTime] = mapped_column(DateTime())
+    id: Mapped[int] = mapped_column(primary_key=True)
+    client_id: Mapped[int] = mapped_column(
+        ForeignKey("clients.id", onupdate="CASCADE", ondelete="CASCADE"))
+    last_login: Mapped[DateTime] = mapped_column(DateTime(),
+                                                 default=datetime.now())
     ip_address: Mapped[str] = mapped_column(String(15))
+    port: Mapped[int] = mapped_column(Integer())
 
 
-class Contacts(Base):
-    __tablename__ = "contacts"
+class ActiveClients(Base):
+    __tablename__ = "active_clients"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    owner_id: Mapped[int] = mapped_column(Integer())
-    client_id: Mapped[int] = mapped_column(ForeignKey("client.id"))
-
-
-if __name__ == "__main__":
-    Base.metadata.create_all(engine)
+    client_id: Mapped[int] = mapped_column(ForeignKey("clients.id",
+                                                      onupdate="CASCADE",
+                                                      ondelete="CASCADE"))
