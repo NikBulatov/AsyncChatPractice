@@ -3,6 +3,7 @@ import json
 import socket
 import logging
 import threading
+from logs import client_log_config
 from services.errors import *
 from services.variables import *
 from services.metaclasses import ClientVerifier

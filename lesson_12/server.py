@@ -1,6 +1,8 @@
+import datetime
 import logging
 from select import select
 from socket import socket, AF_INET, SOCK_STREAM
+from logs import server_log_config
 from services.descriptors import Port
 from services.variables import *
 from services.metaclasses import ServerVerifier
@@ -80,7 +82,7 @@ class Server(metaclass=ServerVerifier):
                 and self.names[message[RECEIVER]] in listen_socks:
             send_message(self.names[message[RECEIVER]], message)
             LOGGER.info(
-                f"Message is send to {message[RECEIVER]} by {message[SENDER]}.")
+                f"Message's send to {message[RECEIVER]} by {message[SENDER]}.")
         elif message[RECEIVER] in self.names and \
                 self.names[message[RECEIVER]] not in listen_socks:
             raise ConnectionError
@@ -101,23 +103,49 @@ class Server(metaclass=ServerVerifier):
                 send_message(client, response)
                 self.clients.remove(client)
                 client.close()
-            return
         elif ACTION in message and message[ACTION] == MESSAGE \
                 and RECEIVER in message and TIME in message \
                 and SENDER in message and MESSAGE_TEXT in message:
             self.messages.append(message)
-            return
         elif ACTION in message and message[ACTION] == EXIT \
                 and ACCOUNT_NAME in message:
             self.clients.remove(self.names[ACCOUNT_NAME])
             self.names[ACCOUNT_NAME].close()
             del self.names[ACCOUNT_NAME]
-            return
+        elif ACTION in message and message[ACTION] == GET_CONTACTS \
+                and TIME in message:
+            if message[USER][ACCOUNT_NAME] in self.names.keys():
+                response = {RESPONSE: RESPONSE_202, ALERT: self.names}
+                send_message(client, response)
+            else:
+                response = RESPONSE_404
+                response[ERROR] = "Not authorized"
+                send_message(client, response)
         else:
             response = RESPONSE_400
             response[ERROR] = "Invalid request"
             send_message(client, response)
-            return
+
+    @staticmethod
+    def request_handler(command: str) -> dict:
+        request = {
+            "action": None,
+            "time": datetime.datetime.now(),
+            "user_login": None
+        }
+        match command:
+            case "get":
+                request["action"] = "get_contacts"
+            case "add":
+                request["action"] = "add_contacts"
+            case "del":
+                request["action"] = "del_contacts"
+            case _:
+                raise ValueError("Unsupported command")
+        return request
+
+    def command_handler(self, ):
+        pass
 
 
 def main():
