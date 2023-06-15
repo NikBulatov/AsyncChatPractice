@@ -2,7 +2,7 @@ import time
 import json
 import socket
 import logging
-import threading
+from threading import Thread
 from logs import client_log_config
 from services.errors import *
 from services.variables import *
@@ -14,7 +14,7 @@ from services.client_helpers import process_server_response, create_presence
 LOGGER = logging.getLogger("client")
 
 
-class ClientSender(threading.Thread, metaclass=ClientVerifier):
+class ClientSender(Thread, metaclass=ClientVerifier):
     def __init__(self, account_name, sock):
         self.account_name = account_name
         self.sock = sock
@@ -27,20 +27,27 @@ class ClientSender(threading.Thread, metaclass=ClientVerifier):
             ACCOUNT_NAME: self.account_name
         }
 
+    def create_get_contacts_message(self):
+        return {
+            ACTION: GET_CONTACTS,
+            TIME: time.time(),
+            ACCOUNT_NAME: self.account_name
+        }
+
     def create_message(self):
-        to = input("Input message receiver: ")
-        message = input("Input message to send: ")
+        receiver = input("Input message receiver: ")
+        message_text = input("Input message to send: ")
         message_dict = {
             ACTION: MESSAGE,
             SENDER: self.account_name,
-            RECEIVER: to,
+            RECEIVER: receiver,
             TIME: time.time(),
-            MESSAGE_TEXT: message
+            MESSAGE_TEXT: message_text
         }
         LOGGER.debug(f"Configure a message dict : {message_dict}")
         try:
             send_message(self.sock, message_dict)
-            LOGGER.info(f"The message is send to {to}")
+            LOGGER.info(f"The message is send to {receiver}")
         except Exception as e:
             print(e)
             LOGGER.critical("Connection is lost")
@@ -59,26 +66,32 @@ class ClientSender(threading.Thread, metaclass=ClientVerifier):
                     try:
                         send_message(self.sock, self.create_exit_message())
                     except Exception as e:
-                        print(e)
+                        print(e, "LOL")
                         pass
                     print("Finished connection")
                     LOGGER.info("Finished running by user input")
                     time.sleep(.25)
                     break
+                case "get_contacts":
+                    try:
+                        send_message(self.sock,
+                                     self.create_get_contacts_message())
+                    except Exception:
+                        pass
                 case _:
                     print(
                         "Invalid command. Try again "
                         "help - show supported commands.")
 
     def print_help(self):
-        print("Supported commands:")
-        print(
-            "message - send a message. Receiver and text will be asked later.")
-        print("help - show docs")
-        print("exit - quit the program")
+        print("""Supported commands:
+    message - send a message. Receiver and text will be asked later.
+    help - show docs
+    exit - quit the program
+    get_contacts - get list of online clients""")
 
 
-class ClientReader(threading.Thread, metaclass=ClientVerifier):
+class ClientReader(Thread, metaclass=ClientVerifier):
     def __init__(self, account_name, sock):
         self.account_name = account_name
         self.sock = sock

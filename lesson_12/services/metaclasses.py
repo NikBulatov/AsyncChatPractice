@@ -1,5 +1,4 @@
-import dis
-from pprint import pprint
+from dis import get_instructions
 
 
 class ServerVerifier(type):
@@ -7,7 +6,7 @@ class ServerVerifier(type):
         methods = []
         for func in clsdict:
             try:
-                instructions = dis.get_instructions(clsdict[func])
+                instructions = get_instructions(clsdict[func])
             except TypeError:
                 pass
             else:
@@ -16,8 +15,8 @@ class ServerVerifier(type):
                         if instruction.argval not in methods:
                             methods.append(instruction.argval)
         if "connect" in methods:
-            raise TypeError(
-                "Using connect method forbidden in server class")
+            raise TypeError("Using connect method forbidden in server class")
+
         if not ('SOCK_STREAM' in methods and 'AF_INET' in methods):
             raise TypeError('Invalid socket initialization.')
         super().__init__(clsname, bases, clsdict)
@@ -28,20 +27,17 @@ class ClientVerifier(type):
         methods = []
         for func in clsdict:
             try:
-                instructions = dis.get_instructions(clsdict[func])
+                instructions = get_instructions(clsdict[func])
             except TypeError:
                 pass
             else:
-                pprint(list(instructions))
                 for instruction in instructions:
                     if instruction.opname == "LOAD_GLOBAL":
                         if instruction.argval not in methods:
                             methods.append(instruction.argval)
-        print(methods)
         for command in ("accept", "listen", "socket"):
             if command in methods:
-                raise TypeError(
-                    "Using forbidden method in class")
+                raise TypeError("Using forbidden method in class")
         match clsname:
             case "ClientSender":
                 if "get_message" in methods and "send_message" not in methods:

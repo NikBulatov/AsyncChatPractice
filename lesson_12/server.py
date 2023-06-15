@@ -1,10 +1,9 @@
-import datetime
 import logging
 from select import select
 from socket import socket, AF_INET, SOCK_STREAM
 from logs import server_log_config
+from services import variables
 from services.descriptors import Port
-from services.variables import *
 from services.metaclasses import ServerVerifier
 from services.parsers import parse_server_arguments
 from services.common import get_message, send_message
@@ -72,85 +71,76 @@ class Server(metaclass=ServerVerifier):
                 except Exception as e:
                     print(e)
                     LOGGER.info(
-                        f"Connection with client {message[RECEIVER]} is lost")
-                    self.clients.remove(self.names[message[RECEIVER]])
-                    del self.names[message[RECEIVER]]
+                        f"Connection with client {message[variables.RECEIVER]}"
+                        f" is lost")
+                    self.clients.remove(
+                        self.names[message[variables.RECEIVER]])
+                    del self.names[message[variables.RECEIVER]]
             self.messages.clear()
 
-    def process_message(self, message, listen_socks):
-        if message[RECEIVER] in self.names \
-                and self.names[message[RECEIVER]] in listen_socks:
-            send_message(self.names[message[RECEIVER]], message)
+    def process_message(self, message: dict, listen_socks: list) -> None:
+        if message[variables.RECEIVER] in self.names \
+                and self.names[message[variables.RECEIVER]] in listen_socks:
+            send_message(self.names[message[variables.RECEIVER]], message)
             LOGGER.info(
-                f"Message's send to {message[RECEIVER]} by {message[SENDER]}.")
-        elif message[RECEIVER] in self.names and \
-                self.names[message[RECEIVER]] not in listen_socks:
+                f"Message's send to {message[variables.RECEIVER]} "
+                f"by {message[variables.SENDER]}.")
+        elif message[variables.RECEIVER] in self.names and \
+                self.names[message[variables.RECEIVER]] not in listen_socks:
             raise ConnectionError
         else:
-            LOGGER.error(f"User \"{message[RECEIVER]}\" isn't registered,"
-                         f" message isn't send")
+            LOGGER.error(
+                f"User \"{message[variables.RECEIVER]}\" isn't registered,"
+                f" message isn't send")
 
-    def process_client_message(self, message, client):
+    def process_client_message(self, message: dict, client: socket):
         LOGGER.debug(f"Process client message: {message}")
-        if ACTION in message and message[ACTION] == PRESENCE \
-                and TIME in message and USER in message:
-            if message[USER][ACCOUNT_NAME] not in self.names.keys():
-                self.names[message[USER][ACCOUNT_NAME]] = client
-                send_message(client, RESPONSE_200)
-            else:
-                response = RESPONSE_400
-                response[ERROR] = "Current username is used"
-                send_message(client, response)
-                self.clients.remove(client)
-                client.close()
-        elif ACTION in message and message[ACTION] == MESSAGE \
-                and RECEIVER in message and TIME in message \
-                and SENDER in message and MESSAGE_TEXT in message:
-            self.messages.append(message)
-        elif ACTION in message and message[ACTION] == EXIT \
-                and ACCOUNT_NAME in message:
-            self.clients.remove(self.names[ACCOUNT_NAME])
-            self.names[ACCOUNT_NAME].close()
-            del self.names[ACCOUNT_NAME]
-        elif ACTION in message and message[ACTION] == GET_CONTACTS \
-                and TIME in message:
-            if message[USER][ACCOUNT_NAME] in self.names.keys():
-                response = {RESPONSE: RESPONSE_202, ALERT: self.names}
-                send_message(client, response)
-            else:
-                response = RESPONSE_404
-                response[ERROR] = "Not authorized"
-                send_message(client, response)
+        if variables.ACTION in message and variables.TIME in message:
+            match message[variables.ACTION]:
+                case variables.PRESENCE:
+                    if variables.USER in message:
+                        if message[variables.USER][variables.ACCOUNT_NAME] \
+                                in self.names.keys():
+                            response = variables.RESPONSE_400
+                            response[
+                                variables.ERROR] = "Current username is used"
+                            send_message(client, response)
+                            self.clients.remove(client)
+                            client.close()
+                        else:
+                            self.names[message[variables.USER][
+                                variables.ACCOUNT_NAME]] = client
+                            send_message(client, variables.RESPONSE_200)
+                case variables.MESSAGE:
+                    if variables.RECEIVER in message \
+                            and variables.SENDER in message \
+                            and variables.MESSAGE_TEXT in message:
+                        self.messages.append(message)
+                case variables.EXIT:
+                    if variables.ACCOUNT_NAME in message:
+                        removed = self.names.pop(
+                            message[variables.ACCOUNT_NAME], None)
+                        self.clients.remove(removed)
+                        removed.close()
+                        del removed
+                case variables.GET_CONTACTS:
+                    if message[variables.USER][variables.ACCOUNT_NAME] \
+                            in self.names.keys():
+                        response = {variables.RESPONSE: variables.RESPONSE_202,
+                                    variables.ALERT: self.names}
+                        send_message(client, response)
+                    else:
+                        response = variables.RESPONSE_404
+                        response[variables.ERROR] = "Not authorized"
+                        send_message(client, response)
         else:
-            response = RESPONSE_400
-            response[ERROR] = "Invalid request"
+            response = variables.RESPONSE_400
+            response[variables.ERROR] = "Invalid request"
             send_message(client, response)
-
-    @staticmethod
-    def request_handler(command: str) -> dict:
-        request = {
-            "action": None,
-            "time": datetime.datetime.now(),
-            "user_login": None
-        }
-        match command:
-            case "get":
-                request["action"] = "get_contacts"
-            case "add":
-                request["action"] = "add_contacts"
-            case "del":
-                request["action"] = "del_contacts"
-            case _:
-                raise ValueError("Unsupported command")
-        return request
-
-    def command_handler(self, ):
-        pass
 
 
 def main():
     listen_address, listen_port = parse_server_arguments()
-
     server = Server(listen_address, listen_port)
     server.main_loop()
 
