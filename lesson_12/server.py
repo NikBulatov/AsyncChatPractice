@@ -6,7 +6,7 @@ from services import variables
 from services.descriptors import Port
 from services.metaclasses import ServerVerifier
 from services.parsers import parse_server_arguments
-from services.common import get_message, send_message
+from services.common import get_response, send_message
 
 LOGGER = logging.getLogger('server')
 
@@ -56,10 +56,10 @@ class Server(metaclass=ServerVerifier):
                 for client_with_message in recv_data:
                     try:
                         self.process_client_message(
-                            get_message(client_with_message),
+                            get_response(client_with_message),
                             client_with_message)
                     except Exception as e:
-                        print(e)
+                        # print(e)
                         LOGGER.info(
                             f"Client {client_with_message.getpeername()} "
                             f"close connection")
@@ -69,7 +69,7 @@ class Server(metaclass=ServerVerifier):
                 try:
                     self.process_message(message, send_data)
                 except Exception as e:
-                    print(e)
+                    # print(e)
                     LOGGER.info(
                         f"Connection with client {message[variables.RECEIVER]}"
                         f" is lost")
@@ -121,11 +121,10 @@ class Server(metaclass=ServerVerifier):
                         removed = self.names.pop(
                             message[variables.ACCOUNT_NAME], None)
                         self.clients.remove(removed)
-                        removed.close()
+                        self.close = removed.close()
                         del removed
                 case variables.GET_CONTACTS:
-                    if message[variables.USER][variables.ACCOUNT_NAME] \
-                            in self.names.keys():
+                    if message[variables.USER_LOGIN] in self.names.keys():
                         response = {variables.RESPONSE: variables.RESPONSE_202,
                                     variables.ALERT: self.names}
                         send_message(client, response)

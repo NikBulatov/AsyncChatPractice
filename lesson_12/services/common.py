@@ -40,7 +40,7 @@ def log(func: callable) -> callable:
 
 
 @log
-def get_message(client: socket) -> dict:
+def get_response(client: socket) -> dict:
     """
     A function for receiving and decoding a message, accepts bytes,
     returns a dictionary or raise an exception due to an error value

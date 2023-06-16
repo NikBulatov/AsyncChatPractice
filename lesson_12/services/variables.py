@@ -17,6 +17,7 @@ PRESENCE = "presence"
 RESPONSE = "response"
 MESSAGE_TEXT = "mess_text"
 MESSAGE = 'message'
+USER_LOGIN = "user_login"
 
 # JIM actions
 EXIT = "exit"
