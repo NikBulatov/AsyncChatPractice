@@ -1,7 +1,7 @@
 DEFAULT_PORT = 7777
 DEFAULT_IP_ADDRESS = ""
 MAX_CONNECTIONS = 5
-MAX_PACKAGE_LENGTH = 4096
+MAX_PACKAGE_LENGTH = 65_536
 ENCODING = "utf-8"
 
 # JIM constants
@@ -17,6 +17,7 @@ PRESENCE = "presence"
 RESPONSE = "response"
 MESSAGE_TEXT = "mess_text"
 MESSAGE = 'message'
+USER_LOGIN = "user_login"
 
 # JIM actions
 EXIT = "exit"

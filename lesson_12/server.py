@@ -6,7 +6,7 @@ from services import variables
 from services.descriptors import Port
 from services.metaclasses import ServerVerifier
 from services.parsers import parse_server_arguments
-from services.common import get_message, send_message
+from services.common import get_response, send_message
 
 LOGGER = logging.getLogger('server')
 
@@ -56,10 +56,9 @@ class Server(metaclass=ServerVerifier):
                 for client_with_message in recv_data:
                     try:
                         self.process_client_message(
-                            get_message(client_with_message),
+                            get_response(client_with_message),
                             client_with_message)
-                    except Exception as e:
-                        print(e)
+                    except Exception:
                         LOGGER.info(
                             f"Client {client_with_message.getpeername()} "
                             f"close connection")
@@ -68,8 +67,7 @@ class Server(metaclass=ServerVerifier):
             for message in self.messages:
                 try:
                     self.process_message(message, send_data)
-                except Exception as e:
-                    print(e)
+                except Exception:
                     LOGGER.info(
                         f"Connection with client {message[variables.RECEIVER]}"
                         f" is lost")
@@ -79,15 +77,14 @@ class Server(metaclass=ServerVerifier):
             self.messages.clear()
 
     def process_message(self, message: dict, listen_socks: list) -> None:
-        if message[variables.RECEIVER] in self.names \
-                and self.names[message[variables.RECEIVER]] in listen_socks:
-            send_message(self.names[message[variables.RECEIVER]], message)
-            LOGGER.info(
-                f"Message's send to {message[variables.RECEIVER]} "
-                f"by {message[variables.SENDER]}.")
-        elif message[variables.RECEIVER] in self.names and \
-                self.names[message[variables.RECEIVER]] not in listen_socks:
-            raise ConnectionError
+        if message[variables.RECEIVER] in self.names:
+            if self.names[message[variables.RECEIVER]] in listen_socks:
+                send_message(self.names[message[variables.RECEIVER]], message)
+                LOGGER.info(
+                    f"Message's send to {message[variables.RECEIVER]} "
+                    f"by {message[variables.SENDER]}.")
+            elif self.names[message[variables.RECEIVER]] not in listen_socks:
+                raise ConnectionError
         else:
             LOGGER.error(
                 f"User \"{message[variables.RECEIVER]}\" isn't registered,"
@@ -124,10 +121,9 @@ class Server(metaclass=ServerVerifier):
                         removed.close()
                         del removed
                 case variables.GET_CONTACTS:
-                    if message[variables.USER][variables.ACCOUNT_NAME] \
-                            in self.names.keys():
-                        response = {variables.RESPONSE: variables.RESPONSE_202,
-                                    variables.ALERT: self.names}
+                    if message[variables.USER_LOGIN] in self.names.keys():
+                        response = {variables.RESPONSE: 202,
+                                    variables.ALERT: list(self.names.keys())}
                         send_message(client, response)
                     else:
                         response = variables.RESPONSE_404
