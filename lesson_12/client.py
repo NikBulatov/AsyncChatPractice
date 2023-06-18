@@ -5,7 +5,7 @@ import logging
 from threading import Thread
 from logs import client_log_config
 from services.errors import *
-from services import variables
+from services.variables import *
 from services.metaclasses import ClientVerifier
 from services.parsers import parse_client_arguments
 from services.common import send_message, get_response
@@ -22,27 +22,27 @@ class ClientSender(Thread, metaclass=ClientVerifier):
 
     def create_exit_message(self):
         return {
-            variables.ACTION: variables.EXIT,
-            variables.TIME: time.time(),
-            variables.ACCOUNT_NAME: self.account_name
+            ACTION: EXIT,
+            TIME: time.time(),
+            ACCOUNT_NAME: self.account_name
         }
 
     def create_get_contacts_message(self):
         return {
-            variables.ACTION: variables.GET_CONTACTS,
-            variables.TIME: time.time(),
-            variables.USER_LOGIN: self.account_name
+            ACTION: GET_CONTACTS,
+            TIME: time.time(),
+            USER_LOGIN: self.account_name
         }
 
     def create_message(self):
         receiver = input("Input message receiver: ")
         message_text = input("Input message to send: ")
         message_dict = {
-            variables.ACTION: variables.MESSAGE,
-            variables.SENDER: self.account_name,
-            variables.RECEIVER: receiver,
-            variables.TIME: time.time(),
-            variables.MESSAGE_TEXT: message_text
+            ACTION: MESSAGE,
+            SENDER: self.account_name,
+            RECEIVER: receiver,
+            TIME: time.time(),
+            MESSAGE_TEXT: message_text
         }
         LOGGER.debug(f"Configure a message dict : {message_dict}")
         try:
@@ -100,34 +100,25 @@ class ClientReader(Thread, metaclass=ClientVerifier):
         while True:
             try:
                 message = get_response(self.sock)
-                if variables.ACTION in message and variables.TIME in message:
-                    match message[variables.ACTION]:
-                        case variables.MESSAGE:
-                            if (variables.SENDER in message
-                                    and variables.RECEIVER in message
-                                    and variables.MESSAGE_TEXT in message
-                                    and message[variables.RECEIVER] ==
-                                    self.account_name):
-                                print(
-                                    f"\nGot a message by user "
-                                    f"{message[variables.SENDER]}:"
-                                    f"\n{message[variables.MESSAGE_TEXT]}")
-                                LOGGER.info(
-                                    f"Got a message by user "
-                                    f"{message[variables.SENDER]}:"
-                                    f"\n{message[variables.MESSAGE_TEXT]}")
-                            else:
-                                LOGGER.error(
-                                    f"Got invalid message by server: {message}")
-                        case variables.GET_CONTACTS:
-                            if variables.USER_LOGIN in message:
-                                print(f"\nGot contact list by server "
-                                      f"\n{message[variables.ALERT]}")
-                                LOGGER.info(f"\nGot contact list by server "
-                                            f"\n{message[variables.ALERT]}")
-                            else:
-                                LOGGER.error(
-                                    f"Got invalid message by server: {message}")
+                if TIME in message:
+                    if (message[ACTION] == MESSAGE and SENDER in message
+                            and RECEIVER in message and MESSAGE_TEXT in message
+                            and message[RECEIVER] == self.account_name):
+                        print(f"\nGot a message by user {message[SENDER]}:"
+                              f"\n{message[MESSAGE_TEXT]}")
+                        LOGGER.info(f"Got a message by user {message[SENDER]}:"
+                                    f"\n{message[MESSAGE_TEXT]}")
+                    else:
+                        LOGGER.error(
+                            f"Got invalid message by server: {message}")
+                elif RESPONSE in message and ALERT in message:
+                    print(f"\nGot contact list by server "
+                          f"\n{message[ALERT]}")
+                    LOGGER.info(f"\nGot contact list by server "
+                                f"\n{message[ALERT]}")
+                else:
+                    LOGGER.error(
+                        f"Got invalid message by server: {message}")
             except IncorrectDataReceivedError:
                 LOGGER.error(f"Failed to decode a message")
             except (OSError, ConnectionError, ConnectionAbortedError,
