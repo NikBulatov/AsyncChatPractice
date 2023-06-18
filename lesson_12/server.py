@@ -96,8 +96,8 @@ class Server(metaclass=ServerVerifier):
             match message[variables.ACTION]:
                 case variables.PRESENCE:
                     if variables.USER in message:
-                        if message[variables.USER][variables.ACCOUNT_NAME] \
-                                in self.names.keys():
+                        if (message[variables.USER][variables.ACCOUNT_NAME]
+                                in self.names.keys()):
                             response = variables.RESPONSE_400
                             response[
                                 variables.ERROR] = "Current username is used"
@@ -109,9 +109,9 @@ class Server(metaclass=ServerVerifier):
                                 variables.ACCOUNT_NAME]] = client
                             send_message(client, variables.RESPONSE_200)
                 case variables.MESSAGE:
-                    if variables.RECEIVER in message \
-                            and variables.SENDER in message \
-                            and variables.MESSAGE_TEXT in message:
+                    if (variables.RECEIVER in message
+                            and variables.SENDER in message
+                            and variables.MESSAGE_TEXT in message):
                         self.messages.append(message)
                 case variables.EXIT:
                     if variables.ACCOUNT_NAME in message:

@@ -101,12 +101,13 @@ class ClientReader(Thread, metaclass=ClientVerifier):
             try:
                 message = get_response(self.sock)
                 if variables.ACTION in message and variables.TIME in message:
-                    match variables.ACTION:
+                    match message[variables.ACTION]:
                         case variables.MESSAGE:
-                            if variables.SENDER in message \
-                                    and variables.RECEIVER in message \
-                                    and variables.MESSAGE_TEXT in message \
-                                    and message[variables.RECEIVER] == self.account_name:
+                            if (variables.SENDER in message
+                                    and variables.RECEIVER in message
+                                    and variables.MESSAGE_TEXT in message
+                                    and message[variables.RECEIVER] ==
+                                    self.account_name):
                                 print(
                                     f"\nGot a message by user "
                                     f"{message[variables.SENDER]}:"
@@ -160,11 +161,11 @@ def main():
             f"Established connection with server. Response: {answer}")
         print(f"Established connection with server.")
     except json.JSONDecodeError:
-        LOGGER.error('Failed decode JSON string')
+        LOGGER.error("Failed decode JSON string")
         exit(1)
     except ServerError as error:
         LOGGER.error(
-            f'While establishing connection server send error: {error.text}')
+            f"While establishing connection server send error: {error.text}")
         exit(1)
     except RequiredFieldMissingError as missing_error:
         LOGGER.error(
