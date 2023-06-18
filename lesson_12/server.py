@@ -55,7 +55,7 @@ class Server(metaclass=ServerVerifier):
             if recv_data:
                 for client_with_message in recv_data:
                     try:
-                        self.process_client_message(
+                        self.request_handler(
                             get_response(client_with_message),
                             client_with_message)
                     except Exception:
@@ -90,13 +90,13 @@ class Server(metaclass=ServerVerifier):
                 f"User \"{message[variables.RECEIVER]}\" isn't registered,"
                 f" message isn't send")
 
-    def process_client_message(self, message: dict, client: socket):
-        LOGGER.debug(f"Process client message: {message}")
-        if variables.ACTION in message and variables.TIME in message:
-            match message[variables.ACTION]:
+    def request_handler(self, request: dict, client: socket):
+        LOGGER.debug(f"Process client message: {request}")
+        if variables.ACTION in request and variables.TIME in request:
+            match request[variables.ACTION]:
                 case variables.PRESENCE:
-                    if variables.USER in message:
-                        if (message[variables.USER][variables.ACCOUNT_NAME]
+                    if variables.USER in request:
+                        if (request[variables.USER][variables.ACCOUNT_NAME]
                                 in self.names.keys()):
                             response = variables.RESPONSE_400
                             response[
@@ -105,23 +105,23 @@ class Server(metaclass=ServerVerifier):
                             self.clients.remove(client)
                             client.close()
                         else:
-                            self.names[message[variables.USER][
+                            self.names[request[variables.USER][
                                 variables.ACCOUNT_NAME]] = client
                             send_message(client, variables.RESPONSE_200)
                 case variables.MESSAGE:
-                    if (variables.RECEIVER in message
-                            and variables.SENDER in message
-                            and variables.MESSAGE_TEXT in message):
-                        self.messages.append(message)
+                    if (variables.RECEIVER in request
+                            and variables.SENDER in request
+                            and variables.MESSAGE_TEXT in request):
+                        self.messages.append(request)
                 case variables.EXIT:
-                    if variables.ACCOUNT_NAME in message:
+                    if variables.ACCOUNT_NAME in request:
                         removed = self.names.pop(
-                            message[variables.ACCOUNT_NAME], None)
+                            request[variables.ACCOUNT_NAME], None)
                         self.clients.remove(removed)
                         removed.close()
                         del removed
                 case variables.GET_CONTACTS:
-                    if message[variables.USER_LOGIN] in self.names.keys():
+                    if request[variables.USER_LOGIN] in self.names.keys():
                         response = {variables.RESPONSE: 202,
                                     variables.ALERT: list(self.names.keys())}
                         send_message(client, response)
@@ -129,6 +129,33 @@ class Server(metaclass=ServerVerifier):
                         response = variables.RESPONSE_404
                         response[variables.ERROR] = "Not authorized"
                         send_message(client, response)
+                case variables.ADD_CONTACT:
+                    if request[variables.USER_LOGIN] in self.names.keys():
+                        if not request[variables.USER_ID] in self.names.keys():
+                            self.names[request[variables.USER_ID]] = None
+                            response = {variables.RESPONSE: 201}
+                            send_message(client, response)
+                        else:
+                            response = variables.RESPONSE_400
+                            response[
+                                variables.ERROR] = "Current user_id is used"
+                case variables.DEL_CONTACT:
+                    if request[variables.USER_LOGIN] in self.names.keys():
+                        try:
+                            removed = self.names.pop(
+                                request[variables.ACCOUNT_NAME], None)
+                            self.clients.remove(removed)
+                            removed.close()
+                        except (AttributeError, ValueError):
+                            response = variables.RESPONSE_400
+                            response[
+                                variables.ERROR] = "Current user_id doesn't exist"
+                        else:
+                            response = variables.RESPONSE_200
+                        finally:
+                            del removed
+                        send_message(client, response)
+
         else:
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Invalid request"

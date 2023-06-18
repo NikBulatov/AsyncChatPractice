@@ -5,7 +5,7 @@ import logging
 from threading import Thread
 from logs import client_log_config
 from services.errors import *
-from services.variables import *
+from services import variables
 from services.metaclasses import ClientVerifier
 from services.parsers import parse_client_arguments
 from services.common import send_message, get_response
@@ -20,63 +20,75 @@ class ClientSender(Thread, metaclass=ClientVerifier):
         self.sock = sock
         super().__init__()
 
-    def create_exit_message(self):
-        return {
-            ACTION: EXIT,
-            TIME: time.time(),
-            ACCOUNT_NAME: self.account_name
-        }
-
-    def create_get_contacts_message(self):
-        return {
-            ACTION: GET_CONTACTS,
-            TIME: time.time(),
-            USER_LOGIN: self.account_name
-        }
-
-    def create_message(self):
-        receiver = input("Input message receiver: ")
-        message_text = input("Input message to send: ")
-        message_dict = {
-            ACTION: MESSAGE,
-            SENDER: self.account_name,
-            RECEIVER: receiver,
-            TIME: time.time(),
-            MESSAGE_TEXT: message_text
-        }
-        LOGGER.debug(f"Configure a message dict : {message_dict}")
-        try:
-            send_message(self.sock, message_dict)
-            LOGGER.info(f"The message is send to {receiver}")
-        except Exception as e:
-            print(e)
-            LOGGER.critical("Connection is lost")
-            exit(1)
+    def create_request(self, action: str) -> dict:
+        request = {variables.TIME: time.time()}
+        match action:
+            case variables.EXIT:
+                request[variables.ACTION] = variables.EXIT
+                request[variables.ACCOUNT_NAME] = self.account_name
+            case variables.GET_CONTACTS:
+                request[variables.ACTION] = variables.GET_CONTACTS
+                request[variables.USER_LOGIN] = self.account_name
+            case variables.MESSAGE:
+                receiver = input("Input message receiver: ")
+                message_text = input("Input message to send: ")
+                request[variables.ACTION] = variables.MESSAGE
+                request[variables.SENDER] = self.account_name
+                request[variables.RECEIVER] = receiver
+                request[variables.ACTION] = variables.MESSAGE
+                request[variables.MESSAGE_TEXT] = message_text
+                LOGGER.debug(f"Configure a message dict : {request}")
+                try:
+                    send_message(self.sock, request)
+                    LOGGER.info(f"The message is send to {receiver}")
+                except Exception as e:
+                    print(e)
+                    LOGGER.critical("Connection is lost")
+                    exit(1)
+            case variables.ADD_CONTACT:
+                user_id = input(f"Input new user's username: ")
+                request[variables.ACTION] = variables.ADD_CONTACT
+                request[variables.USER_ID] = user_id
+                request[variables.USER_LOGIN] = self.account_name
+            case variables.DEL_CONTACT:
+                user_id = input(f"Input a user's username to delete: ")
+                request[variables.ACTION] = variables.DEL_CONTACT
+                request[variables.USER_ID] = user_id
+                request[variables.USER_LOGIN] = self.account_name
+        return request
 
     def run(self):
         self.print_help()
         while True:
             command = input("Input a command: ")
             match command:
-                case "message":
-                    self.create_message()
-                case 'help':
+                case variables.MESSAGE:
+                    self.create_request(variables.MESSAGE)
+                case "help":
                     self.print_help()
-                case "exit":
+                case variables.EXIT:
                     try:
-                        send_message(self.sock, self.create_exit_message())
+                        send_message(self.sock,
+                                     self.create_request(variables.EXIT))
                     except Exception:
                         pass
                     print("Finished connection")
                     LOGGER.info("Finished running by user input")
                     time.sleep(.25)
                     break
-                case "get_contacts":
+                case variables.GET_CONTACTS:
                     try:
                         send_message(self.sock,
-                                     self.create_get_contacts_message())
+                                     self.create_request(
+                                         variables.GET_CONTACTS))
                     except Exception:
                         print("Не работает")
+                case variables.ADD_CONTACT:
+                    send_message(self.sock,
+                                 self.create_request(variables.ADD_CONTACT))
+                case variables.DEL_CONTACT:
+                    send_message(self.sock,
+                                 self.create_request(variables.DEL_CONTACT))
                 case _:
                     print(
                         "Invalid command. Try again "
@@ -100,22 +112,27 @@ class ClientReader(Thread, metaclass=ClientVerifier):
         while True:
             try:
                 message = get_response(self.sock)
-                if TIME in message:
-                    if (message[ACTION] == MESSAGE and SENDER in message
-                            and RECEIVER in message and MESSAGE_TEXT in message
-                            and message[RECEIVER] == self.account_name):
-                        print(f"\nGot a message by user {message[SENDER]}:"
-                              f"\n{message[MESSAGE_TEXT]}")
-                        LOGGER.info(f"Got a message by user {message[SENDER]}:"
-                                    f"\n{message[MESSAGE_TEXT]}")
+                if variables.TIME in message:
+                    if (message[variables.ACTION] == variables.MESSAGE and
+                            variables.SENDER in message and
+                            variables.RECEIVER in message and
+                            variables.MESSAGE_TEXT in message and
+                            message[variables.RECEIVER] == self.account_name):
+                        print(f"\nGot a message by user "
+                              f"{message[variables.SENDER]}:"
+                              f"\n{message[variables.MESSAGE_TEXT]}")
+                        LOGGER.info(f"Got a message by user "
+                                    f"{message[variables.SENDER]}:"
+                                    f"\n{message[variables.MESSAGE_TEXT]}")
                     else:
                         LOGGER.error(
                             f"Got invalid message by server: {message}")
-                elif RESPONSE in message and ALERT in message:
-                    print(f"\nGot contact list by server "
-                          f"\n{message[ALERT]}")
-                    LOGGER.info(f"\nGot contact list by server "
-                                f"\n{message[ALERT]}")
+                elif variables.RESPONSE in message:
+                    if variables.ALERT in message:
+                        print(f"\nGot contact list by server "
+                              f"\n{message[variables.ALERT]}")
+                        LOGGER.info(f"\nGot contact list by server "
+                                    f"\n{message[variables.ALERT]}")
                 else:
                     LOGGER.error(
                         f"Got invalid message by server: {message}")

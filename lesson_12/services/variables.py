@@ -18,12 +18,13 @@ RESPONSE = "response"
 MESSAGE_TEXT = "mess_text"
 MESSAGE = 'message'
 USER_LOGIN = "user_login"
+USER_ID = "user_id"
 
 # JIM actions
 EXIT = "exit"
 GET_CONTACTS = "get_contacts"
-ADD_CONTACT = "add_contacts"
-DEL_CONTACTS = "del_contacts"
+ADD_CONTACT = "add_contact"
+DEL_CONTACT = "del_contact"
 
 # Responses
 RESPONSE_200 = {RESPONSE: 200}
