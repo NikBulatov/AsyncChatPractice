@@ -96,17 +96,15 @@ class Server(metaclass=ServerVerifier):
             match request[variables.ACTION]:
                 case variables.PRESENCE:
                     if variables.USER in request:
-                        if (request[variables.USER][variables.ACCOUNT_NAME]
-                                in self.names.keys()):
+                        name = request[variables.USER][variables.ACCOUNT_NAME]
+                        if name in self.names.keys() and self.names.get(name):
                             response = variables.RESPONSE_400
-                            response[
-                                variables.ERROR] = "Current username is used"
+                            response[variables.ERROR] = "Current username is used"
                             send_message(client, response)
                             self.clients.remove(client)
                             client.close()
                         else:
-                            self.names[request[variables.USER][
-                                variables.ACCOUNT_NAME]] = client
+                            self.names[name] = client
                             send_message(client, variables.RESPONSE_200)
                 case variables.MESSAGE:
                     if (variables.RECEIVER in request
@@ -137,8 +135,7 @@ class Server(metaclass=ServerVerifier):
                             send_message(client, response)
                         else:
                             response = variables.RESPONSE_400
-                            response[
-                                variables.ERROR] = "Current user_id is used"
+                            response[variables.ERROR] = "Current user_id is used"
                 case variables.DEL_CONTACT:
                     if request[variables.USER_LOGIN] in self.names.keys():
                         try:
@@ -148,8 +145,7 @@ class Server(metaclass=ServerVerifier):
                             removed.close()
                         except (AttributeError, ValueError):
                             response = variables.RESPONSE_400
-                            response[
-                                variables.ERROR] = "Current user_id doesn't exist"
+                            response[variables.ERROR] = "Current user_id doesn't exist"
                         else:
                             response = variables.RESPONSE_200
                         finally:

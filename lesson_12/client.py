@@ -99,7 +99,10 @@ class ClientSender(Thread, metaclass=ClientVerifier):
     message - send a message. Receiver and text will be asked later.
     help - show docs
     exit - quit the program
-    get_contacts - get list of online clients""")
+    get_contacts - get list of online clients
+    add_contact - add contact to server contact
+    del_contact - delete contact from server contact list
+    """)
 
 
 class ClientReader(Thread, metaclass=ClientVerifier):
