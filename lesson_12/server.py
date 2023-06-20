@@ -139,19 +139,19 @@ class Server(metaclass=ServerVerifier):
                 case variables.DEL_CONTACT:
                     if request[variables.USER_LOGIN] in self.names.keys():
                         try:
-                            removed = self.names.pop(
-                                request[variables.ACCOUNT_NAME], None)
-                            self.clients.remove(removed)
-                            removed.close()
-                        except (AttributeError, ValueError):
+                            removed = self.names[request[variables.USER_ID]]
+                            self.names.pop(request[variables.USER_ID])
+                        except KeyError:
                             response = variables.RESPONSE_400
                             response[variables.ERROR] = "Current user_id doesn't exist"
                         else:
+                            if removed:
+                                self.clients.remove(removed)
+                                removed.close()
                             response = variables.RESPONSE_200
                         finally:
                             del removed
                         send_message(client, response)
-
         else:
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Invalid request"

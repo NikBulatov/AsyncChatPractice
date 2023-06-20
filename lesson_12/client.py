@@ -136,6 +136,9 @@ class ClientReader(Thread, metaclass=ClientVerifier):
                               f"\n{message[variables.ALERT]}")
                         LOGGER.info(f"\nGot contact list by server "
                                     f"\n{message[variables.ALERT]}")
+                    else:
+                        LOGGER.info(f"\nGot response by server "
+                                    f"\n{message.get(variables.RESPONSE)}")
                 else:
                     LOGGER.error(
                         f"Got invalid message by server: {message}")
