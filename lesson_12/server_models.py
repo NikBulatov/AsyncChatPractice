@@ -36,3 +36,19 @@ class ActiveClients(Base):
     client_id: Mapped[int] = mapped_column(ForeignKey("clients.id",
                                                       onupdate="CASCADE",
                                                       ondelete="CASCADE"))
+
+
+class ContactList(Base):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(50))
+
+
+class MessageHistory(Base):
+    __tablename__ = "message_history"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    from_id: Mapped[int] = mapped_column(Integer(), nullable=False)
+    to_id: Mapped[int] = mapped_column(Integer(), nullable=False)
+    datetime: Mapped[DateTime] = mapped_column(DateTime(),
+                                               default=datetime.now())
+    body: Mapped[Text] = mapped_column(Text(), nullable=False)
