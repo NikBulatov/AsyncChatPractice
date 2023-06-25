@@ -13,14 +13,14 @@ SENDER = "sender"
 RECEIVER = "to"
 ALERT = "alert"
 ERROR = "error"
-PRESENCE = "presence"
 RESPONSE = "response"
 MESSAGE_TEXT = "mess_text"
-MESSAGE = 'message'
 USER_LOGIN = "user_login"
 USER_ID = "user_id"
 
 # JIM actions
+PRESENCE = "presence"
+MESSAGE = "message"
 EXIT = "exit"
 GET_CONTACTS = "get_contacts"
 ADD_CONTACT = "add_contact"
