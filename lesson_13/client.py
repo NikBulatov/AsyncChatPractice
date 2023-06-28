@@ -2,27 +2,90 @@ import time
 import json
 import socket
 import logging
-from threading import Thread
+from threading import Thread, Lock
+
+from PyQt6.QtCore import QObject, pyqtSignal
+
 from logs import client_log_config
 from services.errors import *
 from services import variables
 from services.metaclasses import ClientVerifier
 from services.parsers import parse_client_arguments
 from services.common import send_message, get_response
-from services.client_helpers import process_server_response, create_presence
 
 LOGGER = logging.getLogger("client")
+socket_lock = Lock()
 
 
-class ClientSender(Thread, metaclass=ClientVerifier):
-    def __init__(self, account_name, sock):
+class Client(Thread, QObject):
+    new_message = pyqtSignal(str)
+    connection_lost = pyqtSignal()
+
+    def __init__(self, port, ip_address, database, account_name):
+        Thread.__init__(self)
+        QObject.__init__(self)
+
+        self.database = database
         self.account_name = account_name
-        self.sock = sock
-        super().__init__()
+        self.sock = None
+        self.connection_init(port, ip_address)
+
+        try:
+            self.user_list_update()
+            self.contacts_list_update()
+        except OSError as err:
+            if err.errno:
+                LOGGER.critical("Connection with server is lost")
+                raise ServerError("Connection with server is lost")
+            LOGGER.error("Timeout updating users list")
+        except json.JSONDecodeError:
+            LOGGER.critical("Connection with server is lost")
+            raise ServerError("Connection with server is lost")
+        self.running = True
+
+    def connection_init(self, ip, port):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(5)
+
+        connected = False
+        for i in range(5):
+            LOGGER.info(f"Connection trying №{i + 1}")
+            try:
+                self.sock.connect((ip, port))
+            except (OSError, ConnectionRefusedError):
+                pass
+            else:
+                connected = True
+                break
+            time.sleep(0.25)
+
+        if not connected:
+            LOGGER.critical("Failed to establish a connection with the server")
+            raise ServerError(
+                "Failed to establish a connection with the server")
+
+        LOGGER.debug('A connection has established with server')
+
+        try:
+            with socket_lock:
+                send_message(self.sock,
+                             self.create_request(variables.PRESENCE))
+                self.process_server_response(get_response(self.sock))
+        except (OSError, json.JSONDecodeError):
+            LOGGER.critical('Потеряно соединение с сервером!')
+            raise ServerError('Потеряно соединение с сервером!')
+
+        LOGGER.info('Соединение с сервером успешно установлено.')
 
     def create_request(self, action: str) -> dict:
         request = {variables.TIME: time.time()}
         match action:
+            case variables.PRESENCE:
+                LOGGER.debug(
+                    f"Message:{variables.PRESENCE} is ready for user: {self.account_name}")
+                request[variables.ACTION] = variables.PRESENCE
+                request[variables.USER] = {
+                    variables.ACCOUNT_NAME: self.account_name}
             case variables.EXIT:
                 request[variables.ACTION] = variables.EXIT
                 request[variables.ACCOUNT_NAME] = self.account_name
@@ -57,155 +120,121 @@ class ClientSender(Thread, metaclass=ClientVerifier):
                 request[variables.USER_LOGIN] = self.account_name
         return request
 
-    def run(self):
-        self.print_help()
-        while True:
-            command = input("Input a command: ")
-            match command:
-                case variables.MESSAGE:
-                    self.create_request(variables.MESSAGE)
-                case "help":
-                    self.print_help()
-                case variables.EXIT:
-                    try:
-                        send_message(self.sock,
-                                     self.create_request(variables.EXIT))
-                    except Exception:
-                        pass
-                    print("Finished connection")
-                    LOGGER.info("Finished running by user input")
-                    time.sleep(.25)
-                    break
-                case variables.GET_CONTACTS:
-                    try:
-                        send_message(self.sock,
-                                     self.create_request(
-                                         variables.GET_CONTACTS))
-                    except Exception:
-                        print("Не работает")
-                case variables.ADD_CONTACT:
-                    send_message(self.sock,
-                                 self.create_request(variables.ADD_CONTACT))
-                case variables.DEL_CONTACT:
-                    send_message(self.sock,
-                                 self.create_request(variables.DEL_CONTACT))
-                case _:
-                    print(
-                        "Invalid command. Try again "
-                        "help - show supported commands.")
+    def process_server_response(self, message):
+        LOGGER.debug(f"Parse server message: {message}")
+        if isinstance(message, dict):
+            if variables.RESPONSE in message:
+                match int(message[variables.RESPONSE]):
+                    case 200:
+                        return "200 : OK"
+                    case 400:
+                        raise ServerError(f"400: {message[variables.ERROR]}")
+                    case _:
+                        LOGGER.debug(
+                            f"Received unknown code {message[variables.RESPONSE]}")
 
-    def print_help(self):
-        print("""Supported commands:
-    message - send a message. Receiver and text will be asked later.
-    help - show docs
-    exit - quit the program
-    get_contacts - get list of online clients
-    add_contact - add contact to server contact
-    del_contact - delete contact from server contact list
-    """)
+            elif variables.ACTION in message \
+                    and message[variables.ACTION] == variables.MESSAGE \
+                    and variables.SENDER in message \
+                    and variables.RECEIVER in message \
+                    and variables.MESSAGE_TEXT in message \
+                    and message[variables.RECEIVER] == self.account_name:
+                LOGGER.debug(
+                    f"Received a message by user "
+                    f"{message[variables.SENDER]}:{message[variables.MESSAGE_TEXT]}")
+                self.database.save_message(message[variables.SENDER], 'in',
+                                           message[variables.MESSAGE_TEXT])
+                self.new_message.emit(message[variables.SENDER])
 
+    # Функция обновляющая контакт - лист с сервера
+    def contacts_list_update(self):
+        LOGGER.debug(f"Запрос контакт листа для пользователся {self.name}")
+        req = {
+            ACTION: GET_CONTACTS,
+            TIME: time.time(),
+            USER: self.account_name
+        }
+        LOGGER.debug(f'Сформирован запрос {req}')
+        with socket_lock:
+            send_message(self.sock, req)
+            ans = get_response(self.sock)
+        LOGGER.debug(f'Получен ответ {ans}')
+        if RESPONSE in ans and ans[RESPONSE] == 202:
+            for contact in ans[LIST_INFO]:
+                self.database.add_contact(contact)
+        else:
+            LOGGER.error('Не удалось обновить список контактов.')
 
-class ClientReader(Thread, metaclass=ClientVerifier):
-    def __init__(self, account_name, sock):
-        self.account_name = account_name
-        self.sock = sock
-        super().__init__()
+    # Функция обновления таблицы известных пользователей.
+    def user_list_update(self):
+        LOGGER.debug(
+            f'Запрос списка известных пользователей {self.account_name}')
+        req = {
+            ACTION: USERS_REQUEST,
+            TIME: time.time(),
+            ACCOUNT_NAME: self.account_name
+        }
+        with socket_lock:
+            send_message(self.sock, req)
+            ans = get_response(self.sock)
+        if RESPONSE in ans and ans[RESPONSE] == 202:
+            self.database.add_users(ans[LIST_INFO])
+        else:
+            LOGGER.error('Не удалось обновить список известных пользователей.')
 
-    def run(self):
-        while True:
+    def add_contact(self):
+        request = self.create_request(variables.ADD_CONTACT)
+        LOGGER.debug(f'Creating a contact {request[variables.USER_ID]}')
+        with socket_lock:
+            send_message(self.sock, request)
+            self.process_server_response(get_response(self.sock))
+
+    def remove_contact(self):
+        request = self.create_request(variables.DEL_CONTACT)
+        LOGGER.debug(f'Removing a contact {request[variables.USER_ID]}')
+        with socket_lock:
+            send_message(self.sock, request)
+            self.process_server_response(get_response(self.sock))
+
+    def transport_shutdown(self):
+        self.running = False
+        message = self.create_request(variables.EXIT)
+        with socket_lock:
             try:
-                message = get_response(self.sock)
-                if variables.TIME in message:
-                    if (message[variables.ACTION] == variables.MESSAGE and
-                            variables.SENDER in message and
-                            variables.RECEIVER in message and
-                            variables.MESSAGE_TEXT in message and
-                            message[variables.RECEIVER] == self.account_name):
-                        print(f"\nGot a message by user "
-                              f"{message[variables.SENDER]}:"
-                              f"\n{message[variables.MESSAGE_TEXT]}")
-                        LOGGER.info(f"Got a message by user "
-                                    f"{message[variables.SENDER]}:"
-                                    f"\n{message[variables.MESSAGE_TEXT]}")
-                    else:
-                        LOGGER.error(
-                            f"Got invalid message by server: {message}")
-                elif variables.RESPONSE in message:
-                    if variables.ALERT in message:
-                        print(f"\nGot contact list by server "
-                              f"\n{message[variables.ALERT]}")
-                        LOGGER.info(f"\nGot contact list by server "
-                                    f"\n{message[variables.ALERT]}")
-                    else:
-                        LOGGER.info(f"\nGot response by server "
-                                    f"\n{message.get(variables.RESPONSE)}")
+                send_message(self.sock, message)
+            except OSError:
+                LOGGER.error("Failed to send message")
+        LOGGER.debug('Client close connection')
+        time.sleep(0.5)
+
+    def send_message(self):
+        message_dict = self.create_request(variables.MESSAGE)
+        with socket_lock:
+            send_message(self.sock, message_dict)
+            self.process_server_response(get_response(self.sock))
+            LOGGER.info(
+                f"Message has been sent to {message_dict[variables.RECEIVER]}")
+
+    def run(self):
+        LOGGER.debug("Start proccess - message received by server.")
+        while self.running:
+            time.sleep(.75)
+            with socket_lock:
+                try:
+                    self.sock.settimeout(0.5)
+                    message = get_response(self.sock)
+                except OSError as err:
+                    if err.errno:
+                        LOGGER.critical("Connection is lost")
+                        self.running = False
+                        self.connection_lost.emit()
+                except (ConnectionError, ConnectionAbortedError,
+                        ConnectionResetError, json.JSONDecodeError, TypeError):
+                    LOGGER.debug("Connection is lost")
+                    self.running = False
+                    self.connection_lost.emit()
                 else:
-                    LOGGER.error(
-                        f"Got invalid message by server: {message}")
-            except IncorrectDataReceivedError:
-                LOGGER.error(f"Failed to decode a message")
-            except (OSError, ConnectionError, ConnectionAbortedError,
-                    ConnectionResetError, json.JSONDecodeError):
-                LOGGER.critical(f"Connection is lost")
-                break
-
-
-def main():
-    print("CLI client is running.")
-
-    server_address, server_port, client_name = parse_client_arguments()
-
-    if not client_name:
-        client_name = input("Input username: ")
-    else:
-        print(f"Client is running with username: {client_name}")
-
-    LOGGER.info(
-        f"Running client with params:"
-        f" server address: {server_address},"
-        f" port: {server_port},"
-        f" username: {client_name}")
-
-    try:
-        transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        transport.connect((server_address, server_port))
-        send_message(transport, create_presence(client_name))
-        answer = process_server_response(get_response(transport))
-        LOGGER.info(
-            f"Established connection with server. Response: {answer}")
-        print(f"Established connection with server.")
-    except json.JSONDecodeError:
-        LOGGER.error("Failed decode JSON string")
-        exit(1)
-    except ServerError as error:
-        LOGGER.error(
-            f"While establishing connection server send error: {error.text}")
-        exit(1)
-    except RequiredFieldMissingError as missing_error:
-        LOGGER.error(
-            f"Missing field in server response {missing_error.missing_field}")
-        exit(1)
-    except (ConnectionRefusedError, ConnectionError):
-        LOGGER.critical(
-            f"Failed established connection with server "
-            f"{server_address}:{server_port}, remote host dropped connection")
-        exit(1)
-    else:
-        module_receiver = ClientReader(client_name, transport)
-        module_receiver.daemon = True
-        module_receiver.start()
-
-        module_sender = ClientSender(client_name, transport)
-        module_sender.daemon = True
-        module_sender.start()
-        LOGGER.debug("Processes started")
-
-        while True:
-            time.sleep(.5)
-            if module_receiver.is_alive() and module_sender.is_alive():
-                continue
-            break
-
-
-if __name__ == "__main__":
-    main()
+                    LOGGER.debug(f'Received a message by server: {message}')
+                    self.process_server_response(message)
+                finally:
+                    self.sock.settimeout(5)
