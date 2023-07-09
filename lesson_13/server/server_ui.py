@@ -111,7 +111,7 @@ class ConfigWindow(QDialog):
         self.setFixedSize(365, 260)
         self.setWindowTitle("Server Settings")
 
-        self.db_path_label = QLabel('Path to db file: ', self)
+        self.db_path_label = QLabel("Path to db file: ", self)
         self.db_path_label.move(10, 10)
         self.db_path_label.setFixedSize(240, 15)
 
@@ -120,20 +120,20 @@ class ConfigWindow(QDialog):
         self.db_path.move(10, 30)
         self.db_path.setReadOnly(True)
 
-        self.db_path_select = QPushButton('Open...', self)
+        self.db_path_select = QPushButton("Open...", self)
         self.db_path_select.move(275, 28)
 
         def open_file_dialog():
             global dialog
             dialog = QFileDialog(self)
             path = dialog.getExistingDirectory()
-            path = path.replace('/', '\\')
+            path = path.replace("/", "\\")
             self.db_path.clear()
             self.db_path.insert(path)
 
         self.db_path_select.clicked.connect(open_file_dialog)
 
-        self.db_file_label = QLabel('Database file name: ', self)
+        self.db_file_label = QLabel("Database file name: ", self)
         self.db_file_label.move(10, 68)
         self.db_file_label.setFixedSize(180, 15)
 
@@ -141,7 +141,7 @@ class ConfigWindow(QDialog):
         self.db_file.move(200, 66)
         self.db_file.setFixedSize(150, 20)
 
-        self.port_label = QLabel('Listening port:', self)
+        self.port_label = QLabel("Listening port:", self)
         self.port_label.move(10, 108)
         self.port_label.setFixedSize(180, 15)
 
@@ -149,7 +149,7 @@ class ConfigWindow(QDialog):
         self.port.move(200, 108)
         self.port.setFixedSize(150, 20)
 
-        self.ip_label = QLabel('Listening IP address:', self)
+        self.ip_label = QLabel("Listening IP address:", self)
         self.ip_label.move(10, 148)
         self.ip_label.setFixedSize(180, 15)
 

@@ -5,7 +5,7 @@ from sqlalchemy import (create_engine, Table, Column, Integer, String, Text,
                         MetaData, DateTime)
 from sqlalchemy.orm import mapper, sessionmaker
 
-sys.path.append('../../')
+sys.path.append("../")
 from services.variables import *
 
 
@@ -32,9 +32,9 @@ class ClientDatabase:
         path = os.path.dirname(os.path.realpath(__file__))
         filename = f'client_{name}.db3'
         self.database_engine = create_engine(
-            f'sqlite:///{os.path.join(path, filename)}', echo=False,
+            f"sqlite:///{os.path.join(path, filename)}", echo=False,
             pool_recycle=7200,
-            connect_args={'check_same_thread': False})
+            connect_args=dict(check_same_thread=False))
 
         self.metadata = MetaData()
 
@@ -62,8 +62,7 @@ class ClientDatabase:
         mapper(self.MessageHistory, history)
         mapper(self.Contacts, contacts)
 
-        Session = sessionmaker(bind=self.database_engine)
-        self.session = Session()
+        self.session = sessionmaker(bind=self.database_engine)()
 
         self.session.query(self.Contacts).delete()
         self.session.commit()

@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QMainWindow, QMessageBox, QApplication
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QBrush, QColor
 from PyQt6.QtCore import pyqtSlot, Qt
 
-sys.path.append('../../')
+sys.path.append('../')
 from services.errors import ServerError
 from client.main_window_conv import Ui_MainClientWindow
 from client.add_contact import AddContactDialog
