@@ -2,9 +2,9 @@ import argparse
 import sys
 import logging
 from .variables import DEFAULT_PORT
-from .common import log, get_logger
+from .common import log, _get_logger
 
-LOGGER = get_logger()
+LOGGER = _get_logger()
 
 
 @log

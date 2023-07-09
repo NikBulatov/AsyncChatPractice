@@ -1,11 +1,12 @@
 import os
 import sys
-from datetime import datetime
-from sqlalchemy import (String, DateTime, Integer, create_engine, MetaData,
-                        Table, Column, Text)
+import datetime
+from sqlalchemy import (create_engine, Table, Column, Integer, String, Text,
+                        MetaData, DateTime)
 from sqlalchemy.orm import mapper, sessionmaker
 
-sys.path.append('../')
+sys.path.append('../../')
+from services.variables import *
 
 
 class ClientDatabase:
@@ -20,7 +21,7 @@ class ClientDatabase:
             self.contact = contact
             self.direction = direction
             self.message = message
-            self.date = datetime.now()
+            self.date = datetime.datetime.now()
 
     class Contacts:
         def __init__(self, contact):

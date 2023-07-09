@@ -147,7 +147,6 @@ class ServerStorage:
                 user=user.id, contact=contact.id).count():
             return
 
-        # Создаём объект и заносим его в базу
         contact_row = self.UsersContacts(user.id, contact.id)
         self.session.add(contact_row)
         self.session.commit()

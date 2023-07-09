@@ -9,7 +9,7 @@ from .errors import IncorrectDataReceivedError, NonDictionaryInputError
 from .variables import MAX_PACKAGE_LENGTH, ENCODING
 
 
-def get_logger():
+def _get_logger():
     if sys.argv[0].find("client") == -1:
         logger = logging.getLogger("server")
     else:
@@ -17,7 +17,7 @@ def get_logger():
     return logger
 
 
-LOGGER = get_logger()
+LOGGER = _get_logger()
 
 
 def log(func: callable) -> callable:

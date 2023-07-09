@@ -18,6 +18,7 @@ MESSAGE_TEXT = "mess_text"
 USER_LOGIN = "user_login"
 USER_ID = "user_id"
 
+
 # JIM actions
 PRESENCE = "presence"
 MESSAGE = "message"
@@ -25,6 +26,8 @@ EXIT = "exit"
 GET_CONTACTS = "get_contacts"
 ADD_CONTACT = "add_contact"
 DEL_CONTACT = "del_contact"
+USERS_REQUEST = "get_users"
+LIST_INFO = "data_list"
 
 # Responses
 RESPONSE_200 = {RESPONSE: 200}
