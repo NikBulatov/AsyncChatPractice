@@ -1,96 +1,75 @@
 from datetime import datetime
-from sqlalchemy import (String, DateTime, Integer, ForeignKey,
-                        create_engine, MetaData, Table, Column)
-from sqlalchemy.orm import mapper, sessionmaker
+from sqlalchemy import (create_engine, String, DateTime, Integer, ForeignKey,
+                        MetaData)
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
 
 
 class ServerStorage:
-    class AllUsers:
-        def __init__(self, username):
-            self.id = None
-            self.name = username
-            self.last_login = datetime.now()
+    class AllUsers(Base):
+        __tablename__ = "all_users"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str] = mapped_column(String(50))
+        last_login: Mapped[DateTime] = mapped_column(DateTime(),
+                                                     default=datetime.now())
 
-    class ActiveUsers:
-        def __init__(self, user_id, ip_address, port, login_time):
-            self.id = None
-            self.user = user_id
-            self.login_time = login_time
-            self.ip_address = ip_address
-            self.port = port
+    class ActiveUsers(Base):
+        __tablename__ = "active_users"
 
-    class LoginHistory:
-        def __init__(self, name, date, ip, port):
-            self.id = None
-            self.name = name
-            self.date_time = date
-            self.ip = ip
-            self.port = port
+        id: Mapped[int] = mapped_column(primary_key=True)
+        user: Mapped[int] = mapped_column(ForeignKey("all_users.id",
+                                                     onupdate="CASCADE",
+                                                     ondelete="CASCADE"))
+        login_time: Mapped[DateTime] = mapped_column(DateTime(),
+                                                     default=datetime.now())
+        ip_address: Mapped[str] = mapped_column(String(15))
+        port: Mapped[int] = mapped_column(Integer())
 
-    class UsersContacts:
-        def __init__(self, user, contact):
-            self.id = None
-            self.user = user
-            self.contact = contact
+    class LoginHistory(Base):
+        __tablename__ = "login_history"
 
-    class UsersHistory:
-        def __init__(self, user):
-            self.id = None
-            self.user = user
-            self.sent = 0
-            self.accepted = 0
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[int] = mapped_column(ForeignKey("all_users.id",
+                                                     onupdate="CASCADE",
+                                                     ondelete="CASCADE"))
+        date_time: Mapped[DateTime] = mapped_column(DateTime(),
+                                                    default=datetime.now())
+        ip: Mapped[str] = mapped_column(String(15))
+        port: Mapped[int] = mapped_column(Integer())
+
+    class UsersContacts(Base):
+        __tablename__ = "user_contacts"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        user: Mapped[int] = mapped_column(ForeignKey("all_users.id",
+                                                     onupdate="CASCADE",
+                                                     ondelete="CASCADE"))
+        contact: Mapped[int] = mapped_column(ForeignKey("all_users.id",
+                                                     onupdate="CASCADE",
+                                                     ondelete="CASCADE"))
+
+    class UsersHistory(Base):
+        __tablename__ = "users_history"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        user: Mapped[int] = mapped_column(ForeignKey("all_users.id",
+                                                     onupdate="CASCADE",
+                                                     ondelete="CASCADE"))
+        sent: Mapped[int] = mapped_column(Integer(), default=0)
+        accepted: Mapped[int] = mapped_column(Integer(), default=0)
 
     def __init__(self, path):
-        self.database_engine = create_engine(f'sqlite:///{path}', echo=False,
-                                             pool_recycle=7200,
-                                             connect_args={
-                                                 'check_same_thread': False})
+        self.database_engine = create_engine(
+            f"sqlite:///{path}", echo=False,
+            pool_recycle=7200,
+            connect_args=dict(check_same_thread=False))
 
         self.metadata = MetaData()
 
-        users_table = Table('Users', self.metadata,
-                            Column('id', Integer, primary_key=True),
-                            Column('name', String, unique=True),
-                            Column('last_login', DateTime)
-                            )
-
-        active_users_table = Table('Active_users', self.metadata,
-                                   Column('id', Integer, primary_key=True),
-                                   Column('user', ForeignKey('Users.id'),
-                                          unique=True),
-                                   Column('ip_address', String),
-                                   Column('port', Integer),
-                                   Column('login_time', DateTime)
-                                   )
-
-        user_login_history = Table('Login_history', self.metadata,
-                                   Column('id', Integer, primary_key=True),
-                                   Column('name', ForeignKey('Users.id')),
-                                   Column('date_time', DateTime),
-                                   Column('ip', String),
-                                   Column('port', String)
-                                   )
-
-        contacts = Table('Contacts', self.metadata,
-                         Column('id', Integer, primary_key=True),
-                         Column('user', ForeignKey('Users.id')),
-                         Column('contact', ForeignKey('Users.id'))
-                         )
-
-        users_history_table = Table('History', self.metadata,
-                                    Column('id', Integer, primary_key=True),
-                                    Column('user', ForeignKey('Users.id')),
-                                    Column('sent', Integer),
-                                    Column('accepted', Integer)
-                                    )
-
         self.metadata.create_all(self.database_engine)
-
-        mapper(self.AllUsers, users_table)
-        mapper(self.ActiveUsers, active_users_table)
-        mapper(self.LoginHistory, user_login_history)
-        mapper(self.UsersContacts, contacts)
-        mapper(self.UsersHistory, users_history_table)
 
         self.session = sessionmaker(bind=self.database_engine)()
 

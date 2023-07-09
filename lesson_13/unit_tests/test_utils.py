@@ -4,7 +4,7 @@ import sys
 
 sys.path.append("../")
 
-from helpers.variables import (RESPONSE, ERROR, USER, ACCOUNT_NAME, TIME,
+from services.variables import (RESPONSE, ERROR, USER, ACCOUNT_NAME, TIME,
                                ACTION,
                                PRESENCE, ENCODING)
 
@@ -20,7 +20,7 @@ class TestSocket:
         self.encoded_msg = json_test_msg.encode(ENCODING)
         self.received_msg = message_to_send
 
-    def recv(self, max_len):
+    def recv(self, max_len: int):
         json_msg = json.dumps(self.test_dict)
         return json_msg.encode(ENCODING)
 

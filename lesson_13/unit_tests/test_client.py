@@ -3,10 +3,10 @@ import unittest
 
 sys.path.append("../")
 
-from helpers.errors import ServerError, NonDictionaryInputError
-from helpers.variables import (RESPONSE, ERROR, USER, ACCOUNT_NAME, TIME,
-                               ACTION, PRESENCE)
-from helpers.services import create_presence, process_server_response
+from services.errors import ServerError, NonDictionaryInputError
+from services.variables import (RESPONSE, ERROR, USER, ACCOUNT_NAME, TIME,
+                                ACTION, PRESENCE)
+from services.services import create_presence, process_server_response
 
 
 class TestClass(unittest.TestCase):

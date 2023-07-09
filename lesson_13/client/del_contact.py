@@ -5,9 +5,8 @@ sys.path.append('../')
 from PyQt6.QtWidgets import (QDialog, QLabel, QComboBox, QPushButton,
                              QApplication)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
-logger = logging.getLogger('client')
+LOGGER = logging.getLogger('client')
 
 
 class DelContactDialog(QDialog):
@@ -17,7 +16,7 @@ class DelContactDialog(QDialog):
 
         self.setFixedSize(350, 120)
         self.setWindowTitle("Choose contact to delete:")
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setModal(True)
 
         self.selector_label = QLabel("Choose contact to delete:", self)
@@ -44,4 +43,4 @@ if __name__ == "__main__":
     app = QApplication([])
     window = DelContactDialog(None)
     window.show()
-    app.exec_()
+    app.exec()

@@ -1,3 +1,4 @@
+import configparser
 import logging
 import os
 import sys
@@ -7,9 +8,9 @@ from socket import socket, AF_INET, SOCK_STREAM
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from logs import server_log_config
-from server_ui import (MainWindow, gui_create_model, HistoryWindow,
-                       create_stat_model, ConfigWindow)
-from server_models import ServerStorage
+from server.server_ui import (MainWindow, gui_create_model, HistoryWindow,
+                              create_stat_model, ConfigWindow)
+from server.server_models import ServerStorage
 from services import variables
 from services.descriptors import Port
 from services.metaclasses import ServerVerifier
@@ -25,7 +26,10 @@ lock_flag = Lock()
 class Server(Thread, metaclass=ServerVerifier):
     port = Port()
 
-    def __init__(self, listen_address, listen_port, database: ServerStorage):
+    def __init__(self,
+                 listen_address: str,
+                 listen_port: int,
+                 database: ServerStorage):
         self.addr = listen_address
         self.port = listen_port
         self.database = database
@@ -126,8 +130,8 @@ class Server(Thread, metaclass=ServerVerifier):
                         name = request[variables.USER][variables.ACCOUNT_NAME]
                         if name in self.names.keys() and self.names.get(name):
                             response = variables.RESPONSE_400
-                            response[
-                                variables.ERROR] = "Current username is used"
+                            response[variables.ERROR] = \
+                                "Current username is used"
                             send_message(client, response)
                             self.clients.remove(client)
                             client.close()
@@ -150,15 +154,16 @@ class Server(Thread, metaclass=ServerVerifier):
                             send_message(client, variables.RESPONSE_200)
                         else:
                             response = variables.RESPONSE_400
-                            response[
-                                variables.ERROR] = "User is not registred on server."
+                            response[variables.ERROR] = \
+                                "User is not registred on server."
                             send_message(client, response)
                 case variables.EXIT:
                     if variables.ACCOUNT_NAME in request:
                         self.database.user_logout(
                             request[variables.ACCOUNT_NAME])
                         LOGGER.info(
-                            f'Client {request[variables.ACCOUNT_NAME]} disconnected correctly')
+                            f"Client {request[variables.ACCOUNT_NAME]} "
+                            f"disconnected correctly")
                         removed = self.names.pop(
                             request[variables.ACCOUNT_NAME], None)
                         self.clients.remove(removed)
@@ -199,8 +204,8 @@ class Server(Thread, metaclass=ServerVerifier):
                             self.names.pop(request[variables.USER_ID])
                         except KeyError:
                             response = variables.RESPONSE_400
-                            response[
-                                variables.ERROR] = "Current user_id doesn't exist"
+                            response[variables.ERROR] = \
+                                "Current user_id doesn't exist"
                         else:
                             if removed:
                                 self.clients.remove(removed)
@@ -215,9 +220,26 @@ class Server(Thread, metaclass=ServerVerifier):
             send_message(client, response)
 
 
+def config_load():
+    config = configparser.ConfigParser()
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    config.read(variables.SERVER_CONFIG)
+    if 'SETTINGS' in config:
+        return config
+    else:
+        config.add_section("SETTINGS")
+        config.set("SETTINGS", "Default_port", str(variables.DEFAULT_PORT))
+        config.set("SETTINGS", "Listen_Address", "")
+        config.set("SETTINGS", "Database_path", "")
+        config.set("SETTINGS", "Database_file", "server_database.db3")
+        return config
+
+
 def main():
+    config = config_load()
     listen_address, listen_port = parse_server_arguments()
-    database = ServerStorage("db.sqlite3")
+    database = ServerStorage(os.path.join(config["SETTINGS"]["Database_path"],
+                                          config["SETTINGS"]["Database_file"]))
 
     server = Server(listen_address, listen_port, database)
     server.daemon = True
@@ -226,7 +248,7 @@ def main():
     server_app = QApplication(sys.argv)
     main_window = MainWindow()
 
-    main_window.statusBar().showMessage('Server Working')
+    main_window.statusBar().showMessage("Server Working")
     main_window.active_clients_table.setModel(gui_create_model(database))
     main_window.active_clients_table.resizeColumnsToContents()
     main_window.active_clients_table.resizeRowsToContents()
@@ -252,27 +274,27 @@ def main():
     def server_config():
         global config_window
         config_window = ConfigWindow()
-        config_window.db_path.insert(config['SETTINGS']['Database_path'])
-        config_window.db_file.insert(config['SETTINGS']['Database_file'])
-        config_window.port.insert(config['SETTINGS']['Default_port'])
-        config_window.ip.insert(config['SETTINGS']['Listen_Address'])
+        config_window.db_path.insert(config["SETTINGS"]["Database_path"])
+        config_window.db_file.insert(config["SETTINGS"]["Database_file"])
+        config_window.port.insert(config["SETTINGS"]["Default_port"])
+        config_window.ip.insert(config["SETTINGS"]["Listen_Address"])
         config_window.save_btn.clicked.connect(save_server_config)
 
     def save_server_config():
         global config_window
         message = QMessageBox()
-        config['SETTINGS']['Database_path'] = config_window.db_path.text()
-        config['SETTINGS']['Database_file'] = config_window.db_file.text()
+        config["SETTINGS"]["Database_path"] = config_window.db_path.text()
+        config["SETTINGS"]["Database_file"] = config_window.db_file.text()
         try:
             port = int(config_window.port.text())
         except ValueError:
             message.warning(config_window, "Error", "Port value is int type")
         else:
-            config['SETTINGS']['Listen_Address'] = config_window.ip.text()
+            config["SETTINGS"]["Listen_Address"] = config_window.ip.text()
             if 1023 < port < 65536:
-                config['SETTINGS']['Default_port'] = str(port)
+                config["SETTINGS"]["Default_port"] = str(port)
                 dir_path = os.path.dirname(os.path.realpath(__file__))
-                with open(f"{dir_path}/{'server.ini'}", 'w') as conf:
+                with open(variables.SERVER_CONFIG, 'w') as conf:
                     config.write(conf)
                     message.information(config_window, "OK",
                                         "Setting saved successfully!")

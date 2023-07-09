@@ -1,6 +1,5 @@
 from PyQt6.QtWidgets import (QDialog, QPushButton, QLineEdit, QApplication,
                              QLabel)
-from PyQt6.QtCore import QEvent
 
 
 class UserNameDialog(QDialog):
@@ -39,4 +38,4 @@ class UserNameDialog(QDialog):
 if __name__ == "__main__":
     app = QApplication([])
     dial = UserNameDialog()
-    app.exec_()
+    app.exec()

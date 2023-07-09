@@ -3,12 +3,13 @@ import logging
 from PyQt6.QtWidgets import QMainWindow, QMessageBox, QApplication
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QBrush, QColor
 from PyQt6.QtCore import pyqtSlot, Qt
+from .add_contact import AddContactDialog
+from .del_contact import DelContactDialog
+from .main_window_conv import Ui_MainClientWindow
 
 sys.path.append('../')
+
 from services.errors import ServerError
-from client.main_window_conv import Ui_MainClientWindow
-from client.add_contact import AddContactDialog
-from client.del_contact import DelContactDialog
 
 LOGGER = logging.getLogger('client')
 
@@ -202,10 +203,12 @@ class ClientMainWindow(QMainWindow):
             self.history_list_update()
         else:
             if self.database.check_contact(sender):
-                if self.messages.question(self, "New message",
-                                          f"Received new message by {sender}, open chat?",
-                                          QMessageBox.StandardButtons.Yes,
-                                          QMessageBox.StandardButtons.No) == QMessageBox.StandardButtons.Yes:
+                if self.messages.question(
+                        self, "New message",
+                        f"Received new message by {sender}, open chat?",
+                        QMessageBox.StandardButton.Yes,
+                        QMessageBox.StandardButton.No
+                ) == QMessageBox.StandardButton.Yes:
                     self.current_chat = sender
                     self.set_active_user()
             else:
@@ -215,8 +218,9 @@ class ClientMainWindow(QMainWindow):
                         f"Received new message by {sender}.\n"
                         f"Current user is not in you contact list.\n"
                         f"Add him and open chat?",
-                        QMessageBox.StandardButtons.Yes,
-                        QMessageBox.StandardButtons.No) == QMessageBox.StandardButtons.Yes:
+                        QMessageBox.StandardButton.Yes,
+                        QMessageBox.StandardButton.No
+                ) == QMessageBox.StandardButton.Yes:
                     self.add_contact(sender)
                     self.current_chat = sender
                     self.set_active_user()

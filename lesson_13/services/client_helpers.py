@@ -1,14 +1,36 @@
+import argparse
 import sys
 import time
 import logging
+import argparse
 from socket import socket
 from .common import log, send_message
 from .variables import (ACTION, PRESENCE, TIME, USER, ACCOUNT_NAME, EXIT,
                         SENDER, MESSAGE_TEXT, RECEIVER, ERROR, MESSAGE,
-                        RESPONSE)
+                        RESPONSE, DEFAULT_IP_ADDRESS, DEFAULT_PORT)
 from .errors import ServerError, NonDictionaryInputError
 
 LOGGER = logging.getLogger("client")
+
+
+@log
+def parse_client_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("addr", default=DEFAULT_IP_ADDRESS, nargs="?")
+    parser.add_argument("port", default=DEFAULT_PORT, type=int, nargs="?")
+    parser.add_argument("-n", "--name", default=None, nargs="?")
+    namespace = parser.parse_args(sys.argv[1:])
+    server_address = namespace.addr
+    server_port = namespace.port
+    client_name = namespace.name
+
+    if not 1023 < server_port < 65536:
+        LOGGER.critical(
+            f"Try to run client with incorrect port value: {server_port}. "
+            f"Allowed values are from 1024 to 65535. Client closing.")
+        exit(1)
+
+    return server_address, server_port, client_name
 
 
 @log

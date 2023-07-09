@@ -4,9 +4,8 @@ import logging
 sys.path.append('../')
 from PyQt6.QtWidgets import QDialog, QLabel, QComboBox, QPushButton
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
-logger = logging.getLogger('client')
+LOGGER = logging.getLogger('client')
 
 
 class AddContactDialog(QDialog):
@@ -17,7 +16,7 @@ class AddContactDialog(QDialog):
 
         self.setFixedSize(350, 120)
         self.setWindowTitle('Выберите контакт для добавления:')
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setModal(True)
 
         self.selector_label = QLabel('Выберите контакт для добавления:', self)
@@ -57,5 +56,5 @@ class AddContactDialog(QDialog):
         except OSError:
             pass
         else:
-            logger.debug('Обновление списка пользователей с сервера выполнено')
+            LOGGER.debug('Обновление списка пользователей с сервера выполнено')
             self.possible_contacts_update()

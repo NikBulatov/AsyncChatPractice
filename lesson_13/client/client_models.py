@@ -1,34 +1,41 @@
 import os
 import sys
-import datetime
-from sqlalchemy import (create_engine, Table, Column, Integer, String, Text,
-                        MetaData, DateTime)
-from sqlalchemy.orm import mapper, sessionmaker
+from datetime import datetime
+from sqlalchemy import (create_engine, String, Text, MetaData, DateTime,
+                        ForeignKey)
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
 
-sys.path.append("../")
-from services.variables import *
+
+class Base(DeclarativeBase):
+    pass
 
 
 class ClientDatabase:
-    class KnownUsers:
-        def __init__(self, user):
-            self.id = None
-            self.username = user
+    class KnownUsers(Base):
+        __tablename__ = "known_users"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        username: Mapped[str] = mapped_column(String(50))
 
     class MessageHistory:
-        def __init__(self, contact, direction, message):
-            self.id = None
-            self.contact = contact
-            self.direction = direction
-            self.message = message
-            self.date = datetime.datetime.now()
+        __tablename__ = "message_history"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        contact: Mapped[int] = mapped_column(ForeignKey("contacts.id",
+                                                        onupdate="CASCADE",
+                                                        ondelete="CASCADE"))
+        direction: Mapped[int] = mapped_column(ForeignKey("contacts.id",
+                                                          onupdate="CASCADE",
+                                                          ondelete="CASCADE"))
+        datetime: Mapped[DateTime] = mapped_column(DateTime(),
+                                                   default=datetime.now())
+        body: Mapped[Text] = mapped_column(Text(), nullable=False)
 
     class Contacts:
-        def __init__(self, contact):
-            self.id = None
-            self.name = contact
+        __tablename__ = "contacts"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str] = mapped_column(String(50))
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         path = os.path.dirname(os.path.realpath(__file__))
         filename = f'client_{name}.db3'
         self.database_engine = create_engine(
@@ -37,55 +44,36 @@ class ClientDatabase:
             connect_args=dict(check_same_thread=False))
 
         self.metadata = MetaData()
-
-        users = Table('known_users', self.metadata,
-                      Column('id', Integer, primary_key=True),
-                      Column('username', String)
-                      )
-
-        history = Table('message_history', self.metadata,
-                        Column('id', Integer, primary_key=True),
-                        Column('contact', String),
-                        Column('direction', String),
-                        Column('message', Text),
-                        Column('date', DateTime)
-                        )
-
-        contacts = Table('contacts', self.metadata,
-                         Column('id', Integer, primary_key=True),
-                         Column('name', String, unique=True)
-                         )
-
         self.metadata.create_all(self.database_engine)
 
-        mapper(self.KnownUsers, users)
-        mapper(self.MessageHistory, history)
-        mapper(self.Contacts, contacts)
-
         self.session = sessionmaker(bind=self.database_engine)()
-
         self.session.query(self.Contacts).delete()
         self.session.commit()
 
-    def add_contact(self, contact):
+    def add_contact(self, contact: str):
         if not self.session.query(self.Contacts).filter_by(
                 name=contact).count():
-            contact_row = self.Contacts(contact)
+            contact_row = self.Contacts()
+            contact_row.name = contact
             self.session.add(contact_row)
             self.session.commit()
 
-    def del_contact(self, contact):
+    def del_contact(self, contact: str):
         self.session.query(self.Contacts).filter_by(name=contact).delete()
 
-    def add_users(self, users_list):
+    def add_users(self, users_list: list):
         self.session.query(self.KnownUsers).delete()
         for user in users_list:
-            user_row = self.KnownUsers(user)
+            user_row = self.KnownUsers()
+            user_row.username = user
             self.session.add(user_row)
         self.session.commit()
 
-    def save_message(self, contact, direction, message):
-        message_row = self.MessageHistory(contact, direction, message)
+    def save_message(self, contact: str, direction: str, message: str):
+        message_row = self.MessageHistory()
+        message_row.contact = contact
+        message_row.direction = direction
+        message_row.body = message
         self.session.add(message_row)
         self.session.commit()
 
@@ -97,22 +85,22 @@ class ClientDatabase:
         return [user[0] for user in
                 self.session.query(self.KnownUsers.username).all()]
 
-    def check_user(self, user):
+    def check_user(self, user: str):
         if self.session.query(self.KnownUsers).filter_by(
                 username=user).count():
             return True
         else:
             return False
 
-    def check_contact(self, contact):
+    def check_contact(self, contact: str):
         if self.session.query(self.Contacts).filter_by(name=contact).count():
             return True
         else:
             return False
 
-    def get_history(self, contact):
+    def get_history(self, contact: str):
         query = self.session.query(self.MessageHistory).filter_by(
             contact=contact)
         return [(history_row.contact, history_row.direction,
-                 history_row.message, history_row.date)
+                 history_row.body, history_row.datetime)
                 for history_row in query.all()]
