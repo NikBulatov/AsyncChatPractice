@@ -1,9 +1,9 @@
 import logging
 from select import select
 from socket import socket, AF_INET, SOCK_STREAM
-from lesson_10.services.descriptors import Port
+from services.descriptors import Port
 from services.variables import *
-from lesson_10.services.metaclasses import ServerVerifier
+from services.metaclasses import ServerVerifier
 from services.parsers import parse_server_arguments
 from services.common import get_message, send_message
 

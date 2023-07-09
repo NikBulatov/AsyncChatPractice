@@ -5,7 +5,7 @@ import logging
 import threading
 from services.errors import *
 from services.variables import *
-from lesson_10.services.metaclasses import ClientVerifier
+from services.metaclasses import ClientVerifier
 from services.parsers import parse_client_arguments
 from services.common import send_message, get_message
 from services.client_helpers import process_server_response, create_presence
