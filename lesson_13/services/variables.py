@@ -3,6 +3,7 @@ DEFAULT_IP_ADDRESS = ""
 MAX_CONNECTIONS = 5
 MAX_PACKAGE_LENGTH = 65_536
 ENCODING = "utf-8"
+SERVER_CONFIG = "server.ini"
 
 # JIM constants
 ACTION = "action"

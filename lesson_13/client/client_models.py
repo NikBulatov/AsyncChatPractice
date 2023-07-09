@@ -1,5 +1,4 @@
 import os
-import sys
 from datetime import datetime
 from sqlalchemy import (create_engine, String, Text, MetaData, DateTime,
                         ForeignKey)
@@ -17,7 +16,7 @@ class ClientDatabase:
         id: Mapped[int] = mapped_column(primary_key=True)
         username: Mapped[str] = mapped_column(String(50))
 
-    class MessageHistory:
+    class MessageHistory(Base):
         __tablename__ = "message_history"
         id: Mapped[int] = mapped_column(primary_key=True)
         contact: Mapped[int] = mapped_column(ForeignKey("contacts.id",
@@ -30,20 +29,23 @@ class ClientDatabase:
                                                    default=datetime.now())
         body: Mapped[Text] = mapped_column(Text(), nullable=False)
 
-    class Contacts:
+    class Contacts(Base):
         __tablename__ = "contacts"
         id: Mapped[int] = mapped_column(primary_key=True)
         name: Mapped[str] = mapped_column(String(50))
 
     def __init__(self, name: str):
         path = os.path.dirname(os.path.realpath(__file__))
-        filename = f'client_{name}.db3'
+        filename = f"client_{name}.db3"
         self.database_engine = create_engine(
             f"sqlite:///{os.path.join(path, filename)}", echo=False,
             pool_recycle=7200,
             connect_args=dict(check_same_thread=False))
 
         self.metadata = MetaData()
+        # self.KnownUsers.__table__.create(self.database_engine)
+        # self.MessageHistory.__table__.create(self.database_engine)
+        # self.Contacts.__table__.create(self.database_engine)
         self.metadata.create_all(self.database_engine)
 
         self.session = sessionmaker(bind=self.database_engine)()
@@ -69,10 +71,10 @@ class ClientDatabase:
             self.session.add(user_row)
         self.session.commit()
 
-    def save_message(self, contact: str, direction: str, message: str):
+    def save_message(self, contact, direction, message: str):
         message_row = self.MessageHistory()
-        message_row.contact = contact
-        message_row.direction = direction
+        message_row.contact = contact.id
+        message_row.direction = direction.id
         message_row.body = message
         self.session.add(message_row)
         self.session.commit()

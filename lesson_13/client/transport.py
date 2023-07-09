@@ -27,7 +27,7 @@ class Client(Thread, QObject):
         self.database = database
         self.account_name = account_name
         self.sock = None
-        self.connection_init(port, ip_address)
+        self.connection_init(ip_address, port)
 
         try:
             self.user_list_update()

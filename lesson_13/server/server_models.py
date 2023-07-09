@@ -48,8 +48,8 @@ class ServerStorage:
                                                      onupdate="CASCADE",
                                                      ondelete="CASCADE"))
         contact: Mapped[int] = mapped_column(ForeignKey("all_users.id",
-                                                     onupdate="CASCADE",
-                                                     ondelete="CASCADE"))
+                                                        onupdate="CASCADE",
+                                                        ondelete="CASCADE"))
 
     class UsersHistory(Base):
         __tablename__ = "users_history"
@@ -68,7 +68,11 @@ class ServerStorage:
             connect_args=dict(check_same_thread=False))
 
         self.metadata = MetaData()
-
+        # self.AllUsers.__table__.create(self.database_engine)
+        # self.ActiveUsers.__table__.create(self.database_engine)
+        # self.UsersContacts.__table__.create(self.database_engine)
+        # self.LoginHistory.__table__.create(self.database_engine)
+        # self.UsersHistory.__table__.create(self.database_engine)
         self.metadata.create_all(self.database_engine)
 
         self.session = sessionmaker(bind=self.database_engine)()
@@ -77,24 +81,32 @@ class ServerStorage:
         self.session.commit()
 
     def user_login(self, username, ip_address, port):
-        rez = self.session.query(self.AllUsers).filter_by(name=username)
+        result = self.session.query(self.AllUsers).filter_by(name=username)
 
-        if rez.count():
-            user = rez.first()
+        if result.count():
+            user = result.first()
             user.last_login = datetime.now()
         else:
-            user = self.AllUsers(username)
+            user = self.AllUsers()
+            user.name = username
             self.session.add(user)
             self.session.commit()
-            user_in_history = self.UsersHistory(user.id)
+            user_in_history = self.UsersHistory()
+            user_in_history.user = user.id
             self.session.add(user_in_history)
 
-        new_active_user = self.ActiveUsers(user.id, ip_address, port,
-                                           datetime.now())
+        new_active_user = self.ActiveUsers()
+        new_active_user.user = user.id
+        new_active_user.ip_address = ip_address
+        new_active_user.port = port
+        new_active_user.login_time = datetime.now()
         self.session.add(new_active_user)
 
-        history = self.LoginHistory(user.id, datetime.now(),
-                                    ip_address, port)
+        history = self.LoginHistory()
+        history.name = user.id
+        history.ip = ip_address
+        history.port = port
+        history.date_time = datetime.now()
         self.session.add(history)
         self.session.commit()
 
@@ -126,7 +138,9 @@ class ServerStorage:
                 user=user.id, contact=contact.id).count():
             return
 
-        contact_row = self.UsersContacts(user.id, contact.id)
+        contact_row = self.UsersContacts()
+        contact_row.user = user
+        contact_row.contact = contact
         self.session.add(contact_row)
         self.session.commit()
 

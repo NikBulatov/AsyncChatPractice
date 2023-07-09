@@ -238,8 +238,7 @@ def config_load():
 def main():
     config = config_load()
     listen_address, listen_port = parse_server_arguments()
-    database = ServerStorage(os.path.join(config["SETTINGS"]["Database_path"],
-                                          config["SETTINGS"]["Database_file"]))
+    database = ServerStorage("server_db.db3")
 
     server = Server(listen_address, listen_port, database)
     server.daemon = True
