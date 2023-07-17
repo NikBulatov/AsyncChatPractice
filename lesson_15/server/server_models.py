@@ -5,17 +5,15 @@ from sqlalchemy import (
     DateTime,
     Integer,
     ForeignKey,
-    MetaData,
-    Text,
+    Text
 )
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
 
 
-class Base(DeclarativeBase):
-    pass
-
-
 class ServerStorage:
+    class Base(DeclarativeBase):
+        pass
+
     class AllUsers(Base):
         __tablename__ = "all_users"
         id: Mapped[int] = mapped_column(primary_key=True)
@@ -24,8 +22,12 @@ class ServerStorage:
             DateTime(),
             default=datetime.now()
         )
-        pubkey: Mapped[Text] = mapped_column(Text())
-        password_hash: Mapped[str] = mapped_column(String())
+        pubkey: Mapped[Text] = mapped_column(
+            Text(),
+            default=None,
+            nullable=True
+        )
+        password_hash: Mapped[bytes] = mapped_column(Text())
 
     class ActiveUsers(Base):
         __tablename__ = "active_users"
@@ -84,14 +86,8 @@ class ServerStorage:
             connect_args=dict(check_same_thread=False),
         )
 
-        self.metadata = MetaData()
-        # self.AllUsers.__table__.create(self.database_engine)
-        # self.ActiveUsers.__table__.create(self.database_engine)
-        # self.UsersContacts.__table__.create(self.database_engine)
-        # self.LoginHistory.__table__.create(self.database_engine)
-        # self.UsersHistory.__table__.create(self.database_engine)
+        self.metadata = self.Base.metadata
         self.metadata.create_all(self.database_engine)
-
         self.session = sessionmaker(bind=self.database_engine)()
 
         self.session.query(self.ActiveUsers).delete()
@@ -143,7 +139,7 @@ class ServerStorage:
         self.session.query(self.AllUsers).filter_by(name=name).delete()
         self.session.commit()
 
-    def get_hash(self, name):
+    def get_hash(self, name: str):
         user = self.session.query(self.AllUsers).filter_by(name=name).first()
         return user.password_hash
 

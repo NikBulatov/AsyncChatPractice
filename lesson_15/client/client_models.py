@@ -1,21 +1,19 @@
 import os
 from datetime import datetime
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import (
     create_engine,
     String,
     Text,
-    MetaData,
     DateTime,
     ForeignKey
 )
-from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 class ClientDatabase:
+    class Base(DeclarativeBase):
+        pass
+
     class KnownUsers(Base):
         __tablename__ = "known_users"
 
@@ -50,10 +48,7 @@ class ClientDatabase:
             connect_args=dict(check_same_thread=False),
         )
 
-        self.metadata = MetaData()
-        # self.KnownUsers.__table__.create(self.database_engine)
-        # self.MessageHistory.__table__.create(self.database_engine)
-        # self.Contacts.__table__.create(self.database_engine)
+        self.metadata = self.Base.metadata
         self.metadata.create_all(self.database_engine)
 
         self.session = sessionmaker(bind=self.database_engine)()

@@ -26,7 +26,8 @@ lock_flag = Lock()
 class Server(Thread, metaclass=ServerVerifier):
     port = Port()
 
-    def __init__(self, listen_address: str, listen_port: int, database: ServerStorage):
+    def __init__(self, listen_address: str, listen_port: int,
+                 database: ServerStorage):
         self.addr = listen_address
         self.port = listen_port
         self.database = database
@@ -76,7 +77,8 @@ class Server(Thread, metaclass=ServerVerifier):
                 for client_with_message in recv_data:
                     try:
                         self.request_handler(
-                            get_response(client_with_message), client_with_message
+                            get_response(client_with_message),
+                            client_with_message
                         )
                     except OSError:
                         LOGGER.info(
@@ -96,16 +98,17 @@ class Server(Thread, metaclass=ServerVerifier):
                 try:
                     self.process_message(message)
                 except (
-                    ConnectionAbortedError,
-                    ConnectionError,
-                    ConnectionResetError,
-                    ConnectionRefusedError,
+                        ConnectionAbortedError,
+                        ConnectionError,
+                        ConnectionResetError,
+                        ConnectionRefusedError,
                 ):
                     LOGGER.info(
                         f"Connection with client {message[variables.RECEIVER]}"
                         f" is lost"
                     )
-                    self.clients.remove(self.names[message[variables.RECEIVER]])
+                    self.clients.remove(
+                        self.names[message[variables.RECEIVER]])
                     self.database.user_logout(message[variables.RECEIVER])
                     del self.names[message[variables.RECEIVER]]
                     with lock_flag:
@@ -126,7 +129,8 @@ class Server(Thread, metaclass=ServerVerifier):
         if message[variables.RECEIVER] in self.names:
             if self.names[message[variables.RECEIVER]] in self.listen_sockets:
                 try:
-                    send_message(self.names[message[variables.RECEIVER]], message)
+                    send_message(self.names[message[variables.RECEIVER]],
+                                 message)
                     LOGGER.info(
                         f"Message's send to {message[variables.RECEIVER]} "
                         f"by {message[variables.SENDER]}."
@@ -154,14 +158,15 @@ class Server(Thread, metaclass=ServerVerifier):
                     self.authorize_user(request, client)
                 case variables.MESSAGE:
                     if (
-                        variables.RECEIVER in request
-                        and variables.SENDER in request
-                        and variables.MESSAGE_TEXT in request
-                        and self.names[request[variables.SENDER]] == client
+                            variables.RECEIVER in request
+                            and variables.SENDER in request
+                            and variables.MESSAGE_TEXT in request
+                            and self.names[request[variables.SENDER]] == client
                     ):
                         if request[variables.RECEIVER] in self.names:
                             self.database.process_message(
-                                request[variables.SENDER], request[variables.RECEIVER]
+                                request[variables.SENDER],
+                                request[variables.RECEIVER]
                             )
                             self.process_message(request)
                             try:
@@ -179,18 +184,20 @@ class Server(Thread, metaclass=ServerVerifier):
                             pass
                 case variables.EXIT:
                     if (
-                        variables.ACCOUNT_NAME in request
-                        and self.names[request[variables.ACCOUNT_NAME]] == client
+                            variables.ACCOUNT_NAME in request
+                            and self.names[
+                        request[variables.ACCOUNT_NAME]] == client
                     ):
                         self.remove_client(client)
                 case variables.GET_CONTACTS:
                     if (
-                        request[variables.USER_LOGIN] in self.names.keys()
-                        and variables.USER in request
-                        and self.names[request[variables.USER]] == client
+                            request[variables.USER_LOGIN] in self.names.keys()
+                            and variables.USER in request
+                            and self.names[request[variables.USER]] == client
                     ):
                         response = variables.RESPONSE_202
-                        response[variables.LIST_INFO] = self.database.get_contacts(
+                        response[
+                            variables.LIST_INFO] = self.database.get_contacts(
                             request[variables.USER]
                         )
                         try:
@@ -199,12 +206,13 @@ class Server(Thread, metaclass=ServerVerifier):
                             self.remove_client(client)
                 case variables.ADD_CONTACT:
                     if (
-                        variables.ACCOUNT_NAME in request
-                        and variables.USER in request
-                        and self.names[request[variables.USER]] == client
+                            variables.ACCOUNT_NAME in request
+                            and variables.USER in request
+                            and self.names[request[variables.USER]] == client
                     ):
                         self.database.add_contact(
-                            request[variables.USER], request[variables.ACCOUNT_NAME]
+                            request[variables.USER],
+                            request[variables.ACCOUNT_NAME]
                         )
                         try:
                             send_message(client, variables.RESPONSE_200)
@@ -213,7 +221,8 @@ class Server(Thread, metaclass=ServerVerifier):
                 case variables.DEL_CONTACT:
                     if request[variables.USER_LOGIN] in self.names.keys():
                         self.database.remove_contact(
-                            request[variables.USER], request[variables.ACCOUNT_NAME]
+                            request[variables.USER],
+                            request[variables.ACCOUNT_NAME]
                         )
                         try:
                             send_message(client, variables.RESPONSE_200)
@@ -221,8 +230,9 @@ class Server(Thread, metaclass=ServerVerifier):
                             self.remove_client(client)
                 case variables.USERS_REQUEST:
                     if (
-                        variables.ACCOUNT_NAME in request
-                        and self.names[request[variables.ACCOUNT_NAME]] == client
+                            variables.ACCOUNT_NAME in request
+                            and self.names[
+                        request[variables.ACCOUNT_NAME]] == client
                     ):
                         response = variables.RESPONSE_202
                         response[variables.LIST_INFO] = [
@@ -273,7 +283,7 @@ class Server(Thread, metaclass=ServerVerifier):
             self.clients.remove(sock)
             sock.close()
         elif not self.database.check_user(
-            request[variables.USER][variables.ACCOUNT_NAME]
+                request[variables.USER][variables.ACCOUNT_NAME]
         ):
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Current user is not registered"
@@ -281,18 +291,19 @@ class Server(Thread, metaclass=ServerVerifier):
                 LOGGER.debug(f"Unknown username, sending {response}")
                 send_message(sock, response)
             except OSError:
-                pass
+                LOGGER.debug("OS Error")
             self.clients.remove(sock)
             sock.close()
         else:
-            LOGGER.debug("Correct username, starting passwd check.")
+            LOGGER.debug("Correct username, starting password checking.")
             message_auth = variables.RESPONSE_511
             random_str = binascii.hexlify(os.urandom(64))
             message_auth[variables.DATA] = random_str.decode("ascii")
             hash = hmac.new(
-                self.database.get_hash(request[variables.USER][variables.ACCOUNT_NAME]),
+                self.database.get_hash(
+                    request[variables.USER][variables.ACCOUNT_NAME]),
                 random_str,
-                "MD5",
+                "MD5"
             )
             digest = hash.digest()
             LOGGER.debug(f"Auth message = {message_auth}")
@@ -305,16 +316,18 @@ class Server(Thread, metaclass=ServerVerifier):
                 return
             client_digest = binascii.a2b_base64(response[variables.DATA])
             if (
-                variables.RESPONSE in response
-                and response[variables.RESPONSE] == 511
-                and hmac.compare_digest(digest, client_digest)
+                    variables.RESPONSE in response
+                    and response[variables.RESPONSE] == 511
+                    and hmac.compare_digest(digest, client_digest)
             ):
-                self.names[request[variables.USER][variables.ACCOUNT_NAME]] = sock
+                self.names[
+                    request[variables.USER][variables.ACCOUNT_NAME]] = sock
                 client_ip, client_port = sock.getpeername()
                 try:
                     send_message(sock, variables.RESPONSE_200)
                 except OSError:
-                    self.remove_client(request[variables.USER][variables.ACCOUNT_NAME])
+                    self.remove_client(
+                        request[variables.USER][variables.ACCOUNT_NAME])
                 self.database.user_login(
                     request[variables.USER][variables.ACCOUNT_NAME],
                     client_ip,

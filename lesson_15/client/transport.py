@@ -7,32 +7,41 @@ import socket
 import logging
 from json import JSONDecodeError
 from threading import Thread, Lock
+from Crypto.PublicKey.RSA import RsaKey
 from PyQt6.QtCore import QObject, pyqtSignal
+
 
 sys.path.append("../")
 from logs import client_log_config
 from services.errors import *
 from services import variables
 from services.common import send_message, get_response
+from client.client_models import ClientDatabase
 
 LOGGER = logging.getLogger("client")
 socket_lock = Lock()
 
 
 class Client(Thread, QObject):
-    new_message = pyqtSignal(str)
+    new_message = pyqtSignal(dict)
+    message_205 = pyqtSignal()
     connection_lost = pyqtSignal()
 
-    def __init__(self, port, ip_address, database, username, password, keys):
+    def __init__(self,
+                 port: int,
+                 ip_address: str,
+                 database: ClientDatabase,
+                 username: str,
+                 password: str,
+                 keys: RsaKey):
         Thread.__init__(self)
         QObject.__init__(self)
 
         self.database = database
         self.username = username
         self.password = password
-        self.transport = None
         self.keys = keys
-        self.sock = None
+        self.transport = None
         self.connection_init(ip_address, port)
 
         try:
@@ -48,15 +57,15 @@ class Client(Thread, QObject):
             raise ServerError("Connection with server is lost")
         self.running = True
 
-    def connection_init(self, ip, port):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(5)
+    def connection_init(self, ip: str, port: int):
+        self.transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.transport.settimeout(5)
 
         connected = False
         for i in range(5):
             LOGGER.info(f"Connection trying №{i + 1}")
             try:
-                self.sock.connect((ip, port))
+                self.transport.connect((ip, port))
             except (OSError, ConnectionRefusedError):
                 pass
             else:
@@ -82,18 +91,12 @@ class Client(Thread, QObject):
         pubkey = self.keys.publickey().export_key().decode("ascii")
 
         with socket_lock:
-            presence = {
-                variables.ACTION: variables.PRESENCE,
-                variables.TIME: time.time(),
-                variables.USER: {
-                    variables.ACCOUNT_NAME: self.username,
-                    variables.PUBLIC_KEY: pubkey,
-                },
-            }
-            LOGGER.debug(f"Presense message = {presence}")
+            request = self.create_request(variables.PRESENCE)
+            request[variables.USER].update({variables.PUBLIC_KEY: pubkey})
+            LOGGER.debug(f"Presence message = {request}")
             try:
-                send_message(self.sock, presence)
-                response = get_response(self.sock)
+                send_message(self.transport, request)
+                response = get_response(self.transport)
                 LOGGER.debug(f"Server response = {response}.")
                 if variables.RESPONSE in response:
                     if response[variables.RESPONSE] == 400:
@@ -107,11 +110,9 @@ class Client(Thread, QObject):
                         digest = hash.digest()
                         my_ans = variables.RESPONSE_511
                         my_ans[variables.DATA] = binascii.b2a_base64(
-                            digest).decode(
-                            "ascii"
-                        )
-                        send_message(self.sock, my_ans)
-                        self.process_server_response(get_response(self.sock))
+                            digest).decode("ascii")
+                        send_message(self.transport, my_ans)
+                        self.process_server_response(get_response(self.transport))
             except (OSError, JSONDecodeError) as e:
                 LOGGER.debug(f"Connection error.", exc_info=e)
                 raise ServerError("Failed to authenticate")
@@ -132,7 +133,7 @@ class Client(Thread, QObject):
                 request[variables.ACCOUNT_NAME] = self.username
             case variables.GET_CONTACTS:
                 request[variables.ACTION] = variables.GET_CONTACTS
-                request[variables.USER_LOGIN] = self.username
+                request[variables.USER] = self.username
             case variables.MESSAGE:
                 receiver = input("Input message receiver: ")
                 message_text = input("Input message to send: ")
@@ -143,7 +144,7 @@ class Client(Thread, QObject):
                 request[variables.MESSAGE_TEXT] = message_text
                 LOGGER.debug(f"Configure a message dict : {request}")
                 try:
-                    send_message(self.sock, request)
+                    send_message(self.transport, request)
                     LOGGER.info(f"The message is send to {receiver}")
                 except Exception as e:
                     print(e)
@@ -159,6 +160,12 @@ class Client(Thread, QObject):
                 request[variables.ACTION] = variables.DEL_CONTACT
                 request[variables.USER_ID] = user_id
                 request[variables.USER_LOGIN] = self.username
+            case variables.USERS_REQUEST:
+                request[variables.ACTION] = variables.USERS_REQUEST
+                request[variables.ACCOUNT_NAME] = self.username
+            case variables.PUBLIC_KEY_REQUEST:
+                request[variables.ACTION] = variables.PUBLIC_KEY_REQUEST
+                request[variables.ACCOUNT_NAME] = self.username
         return request
 
     def process_server_response(self, message: dict) -> str | None:
@@ -197,15 +204,11 @@ class Client(Thread, QObject):
 
     def contacts_list_update(self):
         LOGGER.debug(f"Contact list request for user {self.name}")
-        request = {
-            variables.ACTION: variables.GET_CONTACTS,
-            variables.TIME: time.time(),
-            variables.USER: self.username,
-        }
+        request = self.create_request(variables.GET_CONTACTS)
         LOGGER.debug(f"Request is {request}")
         with socket_lock:
-            send_message(self.sock, request)
-            response = get_response(self.sock)
+            send_message(self.transport, request)
+            response = get_response(self.transport)
         LOGGER.debug(f"Response is received {response}")
         if (
                 variables.RESPONSE in response
@@ -223,8 +226,8 @@ class Client(Thread, QObject):
             variables.ACCOUNT_NAME: self.username,
         }
         with socket_lock:
-            send_message(self.sock, request)
-            response = get_response(self.sock)
+            send_message(self.transport, request)
+            response = get_response(self.transport)
         if (
                 variables.RESPONSE in response
                 and response[variables.RESPONSE] == 202
@@ -234,12 +237,8 @@ class Client(Thread, QObject):
             LOGGER.error("Failed to update known contact list")
 
     def key_request(self, user: str):
-        LOGGER.debug(f"Запрос публичного ключа для {user}")
-        request = {
-            variables.ACTION: variables.PUBLIC_KEY_REQUEST,
-            variables.TIME: time.time(),
-            variables.ACCOUNT_NAME: user,
-        }
+        LOGGER.debug(f"Request public key for {user}")
+        request = self.create_request(variables.PUBLIC_KEY_REQUEST)
         with socket_lock:
             send_message(self.transport, request)
             response = get_response(self.transport)
@@ -255,22 +254,22 @@ class Client(Thread, QObject):
         request = self.create_request(variables.ADD_CONTACT)
         LOGGER.debug(f"Creating a contact {request[variables.USER_ID]}")
         with socket_lock:
-            send_message(self.sock, request)
-            self.process_server_response(get_response(self.sock))
+            send_message(self.transport, request)
+            self.process_server_response(get_response(self.transport))
 
     def remove_contact(self):
         request = self.create_request(variables.DEL_CONTACT)
         LOGGER.debug(f"Removing a contact {request[variables.USER_ID]}")
         with socket_lock:
-            send_message(self.sock, request)
-            self.process_server_response(get_response(self.sock))
+            send_message(self.transport, request)
+            self.process_server_response(get_response(self.transport))
 
     def transport_shutdown(self):
         self.running = False
         message = self.create_request(variables.EXIT)
         with socket_lock:
             try:
-                send_message(self.sock, message)
+                send_message(self.transport, message)
             except OSError:
                 LOGGER.error("Failed to send message")
         LOGGER.debug("Client close connection")
@@ -279,8 +278,8 @@ class Client(Thread, QObject):
     def send_message(self):
         message_dict = self.create_request(variables.MESSAGE)
         with socket_lock:
-            send_message(self.sock, message_dict)
-            self.process_server_response(get_response(self.sock))
+            send_message(self.transport, message_dict)
+            self.process_server_response(get_response(self.transport))
             LOGGER.info(
                 f"Message has been sent to {message_dict[variables.RECEIVER]}"
             )
@@ -293,8 +292,8 @@ class Client(Thread, QObject):
 
             with socket_lock:
                 try:
-                    self.sock.settimeout(0.5)
-                    message = get_response(self.sock)
+                    self.transport.settimeout(0.5)
+                    message = get_response(self.transport)
                 except OSError as e:
                     if e.errno:
                         LOGGER.critical("Connection is lost")
@@ -315,4 +314,4 @@ class Client(Thread, QObject):
                         LOGGER.debug(f"Received message by server: {message}")
                         self.process_server_response(message)
                 finally:
-                    self.sock.settimeout(5)
+                    self.transport.settimeout(5)

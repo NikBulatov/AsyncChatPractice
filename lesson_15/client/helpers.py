@@ -1,11 +1,13 @@
-import argparse
 import sys
 import time
 import logging
 import argparse
 from socket import socket
-from .common import log, send_message
-from .variables import (
+
+sys.path.append("../")
+
+from services.common import log, send_message
+from services.variables import (
     ACTION,
     PRESENCE,
     TIME,
@@ -20,7 +22,7 @@ from .variables import (
     RESPONSE,
     DEFAULT_PORT,
 )
-from .errors import ServerError, NonDictionaryInputError
+from services.errors import ServerError, NonDictionaryInputError
 
 LOGGER = logging.getLogger("client")
 
@@ -28,13 +30,15 @@ LOGGER = logging.getLogger("client")
 @log
 def parse_client_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("addr", default="127.0.0.1", nargs="?")
-    parser.add_argument("port", default=DEFAULT_PORT, type=int, nargs="?")
-    parser.add_argument("-n", "--name", default=None, nargs="?")
+    parser.add_argument("addr", default="localhost", type=str, nargs='?')
+    parser.add_argument("port", default=DEFAULT_PORT, type=int, nargs='?')
+    parser.add_argument("-n", "--name", default=None, type=str, nargs='?')
+    parser.add_argument("-p", "--password", default="", type=str, nargs='?')
     namespace = parser.parse_args(sys.argv[1:])
     server_address = namespace.addr
     server_port = namespace.port
     client_name = namespace.name
+    client_password = namespace.password
 
     if not 1023 < server_port < 65536:
         LOGGER.critical(
@@ -43,7 +47,7 @@ def parse_client_args():
         )
         exit(1)
 
-    return server_address, server_port, client_name
+    return server_address, server_port, client_name, client_password
 
 
 @log
@@ -56,7 +60,8 @@ def create_presence(account_name: str) -> dict:
     """
 
     LOGGER.debug(f"Message:{PRESENCE} is ready for user: {account_name}")
-    return {ACTION: PRESENCE, TIME: time.time(), USER: {ACCOUNT_NAME: account_name}}
+    return {ACTION: PRESENCE, TIME: time.time(),
+            USER: {ACCOUNT_NAME: account_name}}
 
 
 @log

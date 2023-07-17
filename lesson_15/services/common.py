@@ -45,7 +45,7 @@ def login_required(func):
         from .variables import ACTION, PRESENCE
 
         sys.path.append("../")
-        from server.server import Server
+        from server.core import Server
 
         if isinstance(args[0], Server):
             found = False

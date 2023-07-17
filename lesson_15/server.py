@@ -4,7 +4,6 @@ import argparse
 import logging
 import configparser
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import Qt
 from logs import server_log_config
 from services import variables
 from services.common import log
@@ -76,9 +75,6 @@ def main():
 
     else:
         server_app = QApplication(sys.argv)
-        server_app.setAttribute(
-            Qt.ApplicationAttribute.AA_DisableWindowContextHelpButton
-        )
         main_window = MainWindow(database, server, config)
         server_app.exec()
         server.running = False

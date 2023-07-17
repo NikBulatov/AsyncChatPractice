@@ -1,5 +1,6 @@
 import binascii
 import hashlib
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QPushButton,
@@ -8,7 +9,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMessageBox,
 )
-from PyQt6.QtCore import Qt
 
 
 class RegisterUser(QDialog):
@@ -95,5 +95,5 @@ class RegisterUser(QDialog):
 if __name__ == "__main__":
     app = QApplication([])
     app.setAttribute(Qt.ApplicationAttribute.AA_DisableWindowContextHelpButton)
-    dial = RegisterUser(None)
+    RegisterUser()
     app.exec()
