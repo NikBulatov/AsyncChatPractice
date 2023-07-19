@@ -3,7 +3,7 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt
 
 
-class StatWindow(QDialog):
+class StartWindow(QDialog):
     def __init__(self, database):
         super().__init__()
 
@@ -30,19 +30,20 @@ class StatWindow(QDialog):
 
         lst = QStandardItemModel()
         lst.setHorizontalHeaderLabels(
-            ["Client username", "Last login", "Messages send", "Messages received"]
+            ["Client username", "Last login",
+             "Messages send", "Messages received"]
         )
         for row in stat_list:
-            user, last_seen, sent, recvd = row
+            user, last_seen, sent, received = row
             user = QStandardItem(user)
             user.setEditable(False)
             last_seen = QStandardItem(str(last_seen.replace(microsecond=0)))
             last_seen.setEditable(False)
             sent = QStandardItem(str(sent))
             sent.setEditable(False)
-            recvd = QStandardItem(str(recvd))
-            recvd.setEditable(False)
-            lst.appendRow([user, last_seen, sent, recvd])
+            received = QStandardItem(str(received))
+            received.setEditable(False)
+            lst.appendRow([user, last_seen, sent, received])
         self.stat_table.setModel(lst)
         self.stat_table.resizeColumnsToContents()
         self.stat_table.resizeRowsToContents()

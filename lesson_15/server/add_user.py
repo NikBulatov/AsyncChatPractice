@@ -70,7 +70,7 @@ class RegisterUser(QDialog):
                 "Error",
                 "Inputted passwords are not matched")
             return
-        elif self.database.check_user(self.client_name.text()):
+        elif self.database.user_exists(self.client_name.text()):
             self.messages.critical(self, "Error", "User exists")
             return
         else:

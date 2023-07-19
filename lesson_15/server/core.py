@@ -1,4 +1,3 @@
-import configparser
 import hmac
 import logging
 import os
@@ -177,7 +176,7 @@ class Server(Thread, metaclass=ServerVerifier):
                         response = variables.RESPONSE_400
                         response[
                             variables.ERROR
-                        ] = "Current user isn't registred on server"
+                        ] = "Current user isn't registered on server"
                         try:
                             send_message(client, response)
                         except OSError:
@@ -186,12 +185,13 @@ class Server(Thread, metaclass=ServerVerifier):
                     if (
                             variables.ACCOUNT_NAME in request
                             and self.names[
-                        request[variables.ACCOUNT_NAME]] == client
+                                request[variables.ACCOUNT_NAME]
+                            ] == client
                     ):
                         self.remove_client(client)
                 case variables.GET_CONTACTS:
                     if (
-                            request[variables.USER_LOGIN] in self.names.keys()
+                            request[variables.USER] in self.names.keys()
                             and variables.USER in request
                             and self.names[request[variables.USER]] == client
                     ):
@@ -219,7 +219,7 @@ class Server(Thread, metaclass=ServerVerifier):
                         except OSError:
                             self.remove_client(client)
                 case variables.DEL_CONTACT:
-                    if request[variables.USER_LOGIN] in self.names.keys():
+                    if request[variables.ACCOUNT_NAME] in self.names.keys():
                         self.database.remove_contact(
                             request[variables.USER],
                             request[variables.ACCOUNT_NAME]
@@ -232,7 +232,8 @@ class Server(Thread, metaclass=ServerVerifier):
                     if (
                             variables.ACCOUNT_NAME in request
                             and self.names[
-                        request[variables.ACCOUNT_NAME]] == client
+                                request[variables.ACCOUNT_NAME]
+                            ] == client
                     ):
                         response = variables.RESPONSE_202
                         response[variables.LIST_INFO] = [
@@ -271,31 +272,29 @@ class Server(Thread, metaclass=ServerVerifier):
                 self.remove_client(client)
 
     def authorize_user(self, request: dict, sock: socket):
-        LOGGER.debug(f"Start auth process for {request[variables.USER]}")
-        if request[variables.USER][variables.ACCOUNT_NAME] in self.names.keys():
+        if request[variables.USER][
+            variables.ACCOUNT_NAME
+        ] in self.names.keys():
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Current username exists"
             try:
-                LOGGER.debug(f"Username busy, sending {response}")
                 send_message(sock, response)
             except OSError:
-                LOGGER.debug("OS Error")
+                pass
             self.clients.remove(sock)
             sock.close()
-        elif not self.database.check_user(
+        elif not self.database.user_exists(
                 request[variables.USER][variables.ACCOUNT_NAME]
         ):
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Current user is not registered"
             try:
-                LOGGER.debug(f"Unknown username, sending {response}")
                 send_message(sock, response)
             except OSError:
-                LOGGER.debug("OS Error")
+                pass
             self.clients.remove(sock)
             sock.close()
         else:
-            LOGGER.debug("Correct username, starting password checking.")
             message_auth = variables.RESPONSE_511
             random_str = binascii.hexlify(os.urandom(64))
             message_auth[variables.DATA] = random_str.decode("ascii")
@@ -306,7 +305,6 @@ class Server(Thread, metaclass=ServerVerifier):
                 "MD5"
             )
             digest = hash.digest()
-            LOGGER.debug(f"Auth message = {message_auth}")
             try:
                 send_message(sock, message_auth)
                 response = get_response(sock)
@@ -321,7 +319,8 @@ class Server(Thread, metaclass=ServerVerifier):
                     and hmac.compare_digest(digest, client_digest)
             ):
                 self.names[
-                    request[variables.USER][variables.ACCOUNT_NAME]] = sock
+                    request[variables.USER][variables.ACCOUNT_NAME]
+                ] = sock
                 client_ip, client_port = sock.getpeername()
                 try:
                     send_message(sock, variables.RESPONSE_200)
@@ -332,7 +331,7 @@ class Server(Thread, metaclass=ServerVerifier):
                     request[variables.USER][variables.ACCOUNT_NAME],
                     client_ip,
                     client_port,
-                    request[variables.USER][variables.PUBLIC_KEY],
+                    request[variables.USER][variables.PUBLIC_KEY]
                 )
             else:
                 response = variables.RESPONSE_400

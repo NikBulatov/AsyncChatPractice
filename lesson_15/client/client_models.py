@@ -75,7 +75,10 @@ class ClientDatabase:
             self.session.add(user_row)
         self.session.commit()
 
-    def save_message(self, contact, direction, message: str):
+    def save_message(self,
+                     contact: Contacts,
+                     direction: Contacts,
+                     message: str):
         message_row = self.MessageHistory()
         message_row.contact = contact.id
         message_row.direction = direction.id
@@ -91,7 +94,7 @@ class ClientDatabase:
         return [user[0]
                 for user in self.session.query(self.KnownUsers.username).all()]
 
-    def check_user(self, user: str):
+    def user_exists(self, user: str):
         if self.session.query(
                 self.KnownUsers
         ).filter_by(username=user).count():
@@ -99,7 +102,7 @@ class ClientDatabase:
         else:
             return False
 
-    def check_contact(self, contact: str):
+    def contact_exists(self, contact: str):
         if self.session.query(self.Contacts).filter_by(name=contact).count():
             return True
         else:

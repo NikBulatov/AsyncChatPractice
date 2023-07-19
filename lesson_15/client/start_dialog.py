@@ -50,5 +50,5 @@ class UserNameDialog(QDialog):
 
 if __name__ == "__main__":
     app = QApplication([])
-    UserNameDialog()
+    dial = UserNameDialog()
     app.exec()

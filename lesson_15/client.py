@@ -15,7 +15,6 @@ LOGGER = logging.getLogger("client")
 
 if __name__ == "__main__":
     server_address, server_port, client_name, client_password = parse_client_args()
-    LOGGER.debug('Arguments has been loaded')
     app = QApplication(sys.argv)
 
     start_dialog = UserNameDialog()
@@ -23,9 +22,7 @@ if __name__ == "__main__":
         app.exec()
         if start_dialog.ok_pressed:
             client_name = start_dialog.client_name.text()
-            client_passwd = start_dialog.client_password.text()
-            LOGGER.debug(
-                f'Using USERNAME = {client_name}, PASSWD = {client_passwd}.')
+            client_password = start_dialog.client_password.text()
         else:
             exit(0)
 
@@ -46,8 +43,7 @@ if __name__ == "__main__":
         with open(key_file, 'rb') as key:
             keys = RSA.import_key(key.read())
 
-    # keys.publickey().export_key()
-    LOGGER.debug("Keys successfully loaded.")
+    keys.publickey().export_key()
     database = ClientDatabase(client_name)
     try:
         transport = Client(
@@ -57,7 +53,6 @@ if __name__ == "__main__":
             client_name,
             client_password,
             keys)
-        LOGGER.debug("Transport ready.")
     except ServerError as error:
         message = QMessageBox()
         message.critical(start_dialog, 'Server error', error.text)

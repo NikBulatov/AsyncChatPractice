@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from Crypto.PublicKey import RSA
 from sqlalchemy import (
     create_engine,
     String,
@@ -27,7 +29,7 @@ class ServerStorage:
             default=None,
             nullable=True
         )
-        password_hash: Mapped[bytes] = mapped_column(Text())
+        password_hash: Mapped[Text] = mapped_column(Text())
 
     class ActiveUsers(Base):
         __tablename__ = "active_users"
@@ -93,7 +95,7 @@ class ServerStorage:
         self.session.query(self.ActiveUsers).delete()
         self.session.commit()
 
-    def user_login(self, username, ip_address, port, key):
+    def user_login(self, username: str, ip_address: str, port: int, key: RSA):
         result = self.session.query(self.AllUsers).filter_by(name=username)
 
         if result.count():
@@ -119,7 +121,7 @@ class ServerStorage:
         self.session.add(history)
         self.session.commit()
 
-    def add_user(self, name, password_hash):
+    def add_user(self, name: str, password_hash: str):
         user_row = self.AllUsers(name=name, password_hash=password_hash)
         self.session.add(user_row)
         self.session.commit()
@@ -127,7 +129,7 @@ class ServerStorage:
         self.session.add(history_row)
         self.session.commit()
 
-    def remove_user(self, name):
+    def remove_user(self, name: str):
         user = self.session.query(self.AllUsers).filter_by(name=name).first()
         self.session.query(self.ActiveUsers).filter_by(user=user.id).delete()
         self.session.query(self.LoginHistory).filter_by(name=user.id).delete()
@@ -143,24 +145,24 @@ class ServerStorage:
         user = self.session.query(self.AllUsers).filter_by(name=name).first()
         return user.password_hash
 
-    def get_pubkey(self, name):
+    def get_pubkey(self, name: str):
         user = self.session.query(self.AllUsers).filter_by(name=name).first()
         return user.pubkey
 
-    def check_user(self, name):
+    def user_exists(self, name: str):
         if self.session.query(self.AllUsers).filter_by(name=name).count():
             return True
         else:
             return False
 
-    def user_logout(self, username):
+    def user_logout(self, name: str):
         user = self.session.query(
             self.AllUsers
-        ).filter_by(name=username).first()
+        ).filter_by(name=name).first()
         self.session.query(self.ActiveUsers).filter_by(user=user.id).delete()
         self.session.commit()
 
-    def process_message(self, sender, recipient):
+    def process_message(self, sender: str, recipient: str):
         sender = self.session.query(
             self.AllUsers
         ).filter_by(name=sender).first().id
@@ -180,7 +182,7 @@ class ServerStorage:
         recipient_row.accepted += 1
         self.session.commit()
 
-    def add_contact(self, user, contact):
+    def add_contact(self, user: AllUsers, contact: UsersContacts):
         user = self.session.query(self.AllUsers).filter_by(name=user).first()
         contact = self.session.query(self.AllUsers).filter_by(
             name=contact).first()
@@ -191,12 +193,12 @@ class ServerStorage:
             return
 
         contact_row = self.UsersContacts()
-        contact_row.user = user
-        contact_row.contact = contact
+        contact_row.user = user.id
+        contact_row.contact = contact.id
         self.session.add(contact_row)
         self.session.commit()
 
-    def remove_contact(self, user, contact):
+    def remove_contact(self, user: AllUsers, contact: UsersContacts):
         user = self.session.query(self.AllUsers).filter_by(name=user).first()
         contact = self.session.query(self.AllUsers).filter_by(
             name=contact).first()
@@ -224,19 +226,19 @@ class ServerStorage:
         ).join(self.AllUsers)
         return query.all()
 
-    def login_history(self, username=None):
+    def login_history(self, name=None):
         query = self.session.query(
             self.AllUsers.name,
             self.LoginHistory.date_time,
             self.LoginHistory.ip,
             self.LoginHistory.port,
         ).join(self.AllUsers)
-        if username:
-            query = query.filter(self.AllUsers.name == username)
+        if name:
+            query = query.filter(self.AllUsers.name == name)
         return query.all()
 
-    def get_contacts(self, username):
-        user = self.session.query(self.AllUsers).filter_by(name=username).one()
+    def get_contacts(self, name):
+        user = self.session.query(self.AllUsers).filter_by(name=name).one()
 
         query = (
             self.session.query(self.UsersContacts, self.AllUsers.name)

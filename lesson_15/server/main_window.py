@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow, QApplication, QLabel, QTableView
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction
 from PyQt6.QtCore import QTimer
-from .stat_window import StatWindow
+from .start_window import StartWindow
 from .config_window import ConfigWindow
 from .add_user import RegisterUser
 from .remove_user import DelUserDialog
@@ -60,15 +60,15 @@ class MainWindow(QMainWindow):
         self.refresh_button.triggered.connect(self.create_users_model)
         self.show_history_button.triggered.connect(self.show_statistics)
         self.config_btn.triggered.connect(self.server_config)
-        self.register_btn.triggered.connect(self.reg_user)
-        self.remove_btn.triggered.connect(self.rem_user)
+        self.register_btn.triggered.connect(self.register_user)
+        self.remove_btn.triggered.connect(self.remove_user)
 
         self.show()
 
     def create_users_model(self):
         list_users = self.database.active_users_list()
-        list = QStandardItemModel()
-        list.setHorizontalHeaderLabels(
+        list_ = QStandardItemModel()
+        list_.setHorizontalHeaderLabels(
             ["Client username", "IP address", "Port", "Connection time"]
         )
         for row in list_users:
@@ -81,26 +81,26 @@ class MainWindow(QMainWindow):
             port.setEditable(False)
             time = QStandardItem(str(time.replace(microsecond=0)))
             time.setEditable(False)
-            list.appendRow([user, ip, port, time])
-        self.active_clients_table.setModel(list)
+            list_.appendRow([user, ip, port, time])
+        self.active_clients_table.setModel(list_)
         self.active_clients_table.resizeColumnsToContents()
         self.active_clients_table.resizeRowsToContents()
 
     def show_statistics(self):
-        global stat_window
-        stat_window = StatWindow(self.database)
-        stat_window.show()
+        global start_window
+        start_window = StartWindow(self.database)
+        start_window.show()
 
     def server_config(self):
         global config_window
         config_window = ConfigWindow(self.config)
 
-    def reg_user(self):
+    def register_user(self):
         global reg_window
         reg_window = RegisterUser(self.database, self.server_thread)
         reg_window.show()
 
-    def rem_user(self):
+    def remove_user(self):
         global rem_window
         rem_window = DelUserDialog(self.database, self.server_thread)
         rem_window.show()

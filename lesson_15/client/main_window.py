@@ -125,7 +125,7 @@ class ClientMainWindow(QMainWindow):
         if not self.current_chat_key:
             self.messages.warning(
                 self, "Error",
-                "For chosen user no enicryption key")
+                "For chosen user no encryption key")
             return
 
         self.ui.label_new_message.setText(
@@ -268,7 +268,7 @@ class ClientMainWindow(QMainWindow):
         if sender == self.current_chat:
             self.history_list_update()
         else:
-            if self.database.check_contact(sender):
+            if self.database.contact_exists(sender):
                 if self.messages.question(
                         self,
                         "A new message",
@@ -305,7 +305,7 @@ class ClientMainWindow(QMainWindow):
 
     @pyqtSlot()
     def sig_205(self):
-        if self.current_chat and not self.database.check_user(
+        if self.current_chat and not self.database.user_exists(
                 self.current_chat):
             self.messages.warning(
                 self,
