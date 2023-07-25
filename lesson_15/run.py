@@ -1,33 +1,39 @@
-from subprocess import Popen, CREATE_NEW_CONSOLE
+import subprocess
 
 
 def main():
     PROCESSES = []
+
     while True:
         action = input(
-            """Actions:
-    q - quit;
-    r - run server and clients;
-    t - terminate all consoles:\n\r"""
-        )
+            """Choose action:
+            q - quit ,
+            s - run server,
+            k - run clients
+            x - close all windows:""")
         match action:
             case "q":
                 break
-            case "r":
+            case "s":
                 PROCESSES.append(
-                    Popen("python core.py", creationflags=CREATE_NEW_CONSOLE)
-                )
-                for i in range(1, 3):
+                    subprocess.Popen(
+                        "python server.py",
+                        creationflags=subprocess.CREATE_NEW_CONSOLE))
+            case "k":
+                print("Make sure that the required number of clients "
+                      "with a password of 123 are registered on the server.")
+                print("The first start can be quite long due to "
+                      "key generation!")
+                clients_count = int(
+                    input("Enter the number of test clients to run:"))
+                for i in range(clients_count):
                     PROCESSES.append(
-                        Popen(
-                            f"python client.py -n user_{i}",
-                            creationflags=CREATE_NEW_CONSOLE,
-                        )
-                    )
-            case "t":
+                        subprocess.Popen(
+                            f"python client.py -n test{i + 1} -p 123",
+                            creationflags=subprocess.CREATE_NEW_CONSOLE))
+            case "x":
                 while PROCESSES:
-                    victim = PROCESSES.pop()
-                    victim.kill()
+                    PROCESSES.pop().kill()
 
 
 if __name__ == "__main__":
