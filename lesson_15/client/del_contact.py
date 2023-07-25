@@ -1,12 +1,6 @@
 import logging
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
-    QDialog,
-    QLabel,
-    QComboBox,
-    QPushButton,
-    QApplication
-)
+from PyQt6.QtWidgets import QDialog, QLabel, QComboBox, QPushButton, QApplication
 
 LOGGER = logging.getLogger("client")
 

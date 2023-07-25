@@ -20,10 +20,10 @@ def parse_client_args() -> tuple:
     :return:
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("addr", default="localhost", type=str, nargs='?')
-    parser.add_argument("port", default=DEFAULT_PORT, type=int, nargs='?')
-    parser.add_argument("-n", "--name", default=None, type=str, nargs='?')
-    parser.add_argument("-p", "--password", default="", type=str, nargs='?')
+    parser.add_argument("addr", default="localhost", type=str, nargs="?")
+    parser.add_argument("port", default=DEFAULT_PORT, type=int, nargs="?")
+    parser.add_argument("-n", "--name", default=None, type=str, nargs="?")
+    parser.add_argument("-p", "--password", default="", type=str, nargs="?")
     namespace = parser.parse_args(sys.argv[1:])
     server_address = namespace.addr
     server_port = namespace.port
@@ -50,8 +50,7 @@ def create_presence(account_name: str) -> dict:
     """
 
     LOGGER.debug(f"Message:{PRESENCE} is ready for user: {account_name}")
-    return {ACTION: PRESENCE, TIME: time.time(),
-            USER: {ACCOUNT_NAME: account_name}}
+    return {ACTION: PRESENCE, TIME: time.time(), USER: {ACCOUNT_NAME: account_name}}
 
 
 @log

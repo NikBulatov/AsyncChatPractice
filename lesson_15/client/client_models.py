@@ -1,13 +1,7 @@
 import os
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import (
-    create_engine,
-    String,
-    Text,
-    DateTime,
-    ForeignKey
-)
+from sqlalchemy import create_engine, String, Text, DateTime, ForeignKey
 
 
 class ClientDatabase:
@@ -29,8 +23,7 @@ class ClientDatabase:
         direction: Mapped[int] = mapped_column(
             ForeignKey("contacts.id", onupdate="CASCADE", ondelete="CASCADE")
         )
-        datetime: Mapped[DateTime] = mapped_column(DateTime(),
-                                                   default=datetime.now())
+        datetime: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.now())
         body: Mapped[Text] = mapped_column(Text(), nullable=False)
 
     class Contacts(Base):
@@ -61,9 +54,7 @@ class ClientDatabase:
         :param contact: a contact name
         :return:
         """
-        if not self.session.query(
-                self.Contacts
-        ).filter_by(name=contact).count():
+        if not self.session.query(self.Contacts).filter_by(name=contact).count():
             contact_row = self.Contacts()
             contact_row.name = contact
             self.session.add(contact_row)
@@ -90,10 +81,7 @@ class ClientDatabase:
             self.session.add(user_row)
         self.session.commit()
 
-    def save_message(self,
-                     contact: str,
-                     direction: str,
-                     message: str) -> None:
+    def save_message(self, contact: str, direction: str, message: str) -> None:
         """
 
         :param contact: a contact name
@@ -113,16 +101,14 @@ class ClientDatabase:
         Return all contacts
         :return: list of contact names
         """
-        return [contact[0]
-                for contact in self.session.query(self.Contacts.name).all()]
+        return [contact[0] for contact in self.session.query(self.Contacts.name).all()]
 
     def get_users(self) -> list:
         """
         Return all known users
         :return:
         """
-        return [user[0]
-                for user in self.session.query(self.KnownUsers.username).all()]
+        return [user[0] for user in self.session.query(self.KnownUsers.username).all()]
 
     def user_exists(self, user: str) -> bool:
         """
@@ -130,9 +116,7 @@ class ClientDatabase:
         :param user: a username
         :return:
         """
-        if self.session.query(
-                self.KnownUsers
-        ).filter_by(username=user).count():
+        if self.session.query(self.KnownUsers).filter_by(username=user).count():
             return True
         else:
             return False
@@ -154,9 +138,7 @@ class ClientDatabase:
         :param contact: a contact name
         :return:
         """
-        query = self.session.query(
-            self.MessageHistory
-        ).filter_by(contact=contact)
+        query = self.session.query(self.MessageHistory).filter_by(contact=contact)
         return [
             (
                 history_row.contact,

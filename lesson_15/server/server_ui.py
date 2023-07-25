@@ -19,9 +19,7 @@ from server_models import ServerStorage
 def gui_create_model(database: ServerStorage) -> QStandardItemModel:
     list_users = database.active_users_list()
     lst = QStandardItemModel()
-    lst.setHorizontalHeaderLabels(
-        ["Client Name", "IP Address", "Port", "Last Login"]
-    )
+    lst.setHorizontalHeaderLabels(["Client Name", "IP Address", "Port", "Last Login"])
     for row in list_users:
         user, ip, port, time = row
         user = QStandardItem(user)
@@ -169,8 +167,7 @@ class ConfigWindow(QDialog):
         self.ip_label.move(10, 148)
         self.ip_label.setFixedSize(180, 15)
 
-        self.ip_label_note = QLabel(
-            "Empty to accept connection by any address", self)
+        self.ip_label_note = QLabel("Empty to accept connection by any address", self)
         self.ip_label_note.move(10, 168)
         self.ip_label_note.setFixedSize(500, 30)
 

@@ -34,28 +34,24 @@ if __name__ == "__main__":
     )
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    key_file = os.path.join(dir_path, f'{client_name}.key')
+    key_file = os.path.join(dir_path, f"{client_name}.key")
     if not os.path.exists(key_file):
         keys = RSA.generate(2048, os.urandom)
-        with open(key_file, 'wb') as key:
+        with open(key_file, "wb") as key:
             key.write(keys.export_key())
     else:
-        with open(key_file, 'rb') as key:
+        with open(key_file, "rb") as key:
             keys = RSA.import_key(key.read())
 
     keys.publickey().export_key()
     database = ClientDatabase(client_name)
     try:
         transport = Client(
-            server_port,
-            server_address,
-            database,
-            client_name,
-            client_password,
-            keys)
+            server_port, server_address, database, client_name, client_password, keys
+        )
     except ServerError as error:
         message = QMessageBox()
-        message.critical(start_dialog, 'Server error', error.text)
+        message.critical(start_dialog, "Server error", error.text)
         exit(1)
     transport.daemon = True
     transport.start()
@@ -64,7 +60,7 @@ if __name__ == "__main__":
 
     main_window = ClientMainWindow(database, transport, keys)
     main_window.make_connection(transport)
-    main_window.setWindowTitle(f'Messanger alpha release - {client_name}')
+    main_window.setWindowTitle(f"Messanger alpha release - {client_name}")
     app.exec()
 
     transport.transport_shutdown()

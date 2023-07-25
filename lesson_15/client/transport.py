@@ -26,13 +26,15 @@ class Client(Thread, QObject):
     message_205 = pyqtSignal()
     connection_lost = pyqtSignal()
 
-    def __init__(self,
-                 port: int,
-                 ip_address: str,
-                 database: ClientDatabase,
-                 username: str,
-                 password: str,
-                 keys: RsaKey):
+    def __init__(
+        self,
+        port: int,
+        ip_address: str,
+        database: ClientDatabase,
+        username: str,
+        password: str,
+        keys: RsaKey,
+    ):
         Thread.__init__(self)
         QObject.__init__(self)
 
@@ -80,8 +82,7 @@ class Client(Thread, QObject):
 
         if not connected:
             LOGGER.critical("Failed to establish a connection with the server")
-            raise ServerError(
-                "Failed to establish a connection with the server")
+            raise ServerError("Failed to establish a connection with the server")
 
         LOGGER.debug("A connection has established with server")
         LOGGER.debug("Starting auth dialog")
@@ -97,10 +98,7 @@ class Client(Thread, QObject):
             request = {
                 ACTION: PRESENCE,
                 TIME: time.time(),
-                USER: {
-                    ACCOUNT_NAME: self.username,
-                    PUBLIC_KEY: pubkey
-                }
+                USER: {ACCOUNT_NAME: self.username, PUBLIC_KEY: pubkey},
             }
             try:
                 send_request(self.transport, request)
@@ -112,18 +110,15 @@ class Client(Thread, QObject):
                         case 511:
                             response_data = response[DATA]
                             hash = hmac.new(
-                                passwd_hash_string,
-                                response_data.encode("utf-8"),
-                                "MD5"
+                                passwd_hash_string, response_data.encode("utf-8"), "MD5"
                             )
                             digest = hash.digest()
                             my_response = RESPONSE_511
-                            my_response[DATA] = binascii.b2a_base64(
-                                digest).decode("ascii")
-                            send_request(self.transport, my_response)
-                            self.process_server_response(
-                                get_response(self.transport)
+                            my_response[DATA] = binascii.b2a_base64(digest).decode(
+                                "ascii"
                             )
+                            send_request(self.transport, my_response)
+                            self.process_server_response(get_response(self.transport))
             except (OSError, JSONDecodeError) as e:
                 LOGGER.debug(f"Connection error.", exc_info=e)
                 raise ServerError("Failed to authenticate")
@@ -152,18 +147,15 @@ class Client(Thread, QObject):
                         self.contacts_list_update()
                         self.message_205.emit()
                     case _:
-                        LOGGER.debug(
-                            f"Received unknown code "
-                            f"{message[RESPONSE]}"
-                        )
+                        LOGGER.debug(f"Received unknown code " f"{message[RESPONSE]}")
 
             elif (
-                    ACTION in message
-                    and message[ACTION] == MESSAGE
-                    and SENDER in message
-                    and RECEIVER in message
-                    and MESSAGE_TEXT in message
-                    and message[RECEIVER] == self.username
+                ACTION in message
+                and message[ACTION] == MESSAGE
+                and SENDER in message
+                and RECEIVER in message
+                and MESSAGE_TEXT in message
+                and message[RECEIVER] == self.username
             ):
                 LOGGER.debug(
                     f"Received a message by user "
@@ -178,20 +170,13 @@ class Client(Thread, QObject):
         :return:
         """
         LOGGER.debug(f"Contact list request for user {self.name}")
-        request = {
-            ACTION: GET_CONTACTS,
-            TIME: time.time(),
-            USER: self.username
-        }
+        request = {ACTION: GET_CONTACTS, TIME: time.time(), USER: self.username}
         LOGGER.debug(f"Request is {request}")
         with socket_lock:
             send_request(self.transport, request)
             response = get_response(self.transport)
         LOGGER.debug(f"Response is received {response}")
-        if (
-                RESPONSE in response
-                and response[RESPONSE] == 202
-        ):
+        if RESPONSE in response and response[RESPONSE] == 202:
             for contact in response[LIST_INFO]:
                 self.database.add_contact(contact)
         else:
@@ -206,15 +191,12 @@ class Client(Thread, QObject):
         request = {
             ACTION: USERS_REQUEST,
             TIME: time.time(),
-            ACCOUNT_NAME: self.username
+            ACCOUNT_NAME: self.username,
         }
         with socket_lock:
             send_request(self.transport, request)
             response = get_response(self.transport)
-        if (
-                RESPONSE in response
-                and response[RESPONSE] == 202
-        ):
+        if RESPONSE in response and response[RESPONSE] == 202:
             self.database.add_users(response[LIST_INFO])
         else:
             LOGGER.error("Failed to update known contact list")
@@ -226,18 +208,11 @@ class Client(Thread, QObject):
         :return:
         """
         LOGGER.debug(f"Request public key for {user}")
-        request = {
-            ACTION: PUBLIC_KEY_REQUEST,
-            TIME: time.time(),
-            ACCOUNT_NAME: user
-        }
+        request = {ACTION: PUBLIC_KEY_REQUEST, TIME: time.time(), ACCOUNT_NAME: user}
         with socket_lock:
             send_request(self.transport, request)
             response = get_response(self.transport)
-        if (
-                RESPONSE in response
-                and response[RESPONSE] == 511
-        ):
+        if RESPONSE in response and response[RESPONSE] == 511:
             return response[DATA]
         else:
             LOGGER.error(f"Failed to get recipient pubkey by {user}.")
@@ -252,7 +227,7 @@ class Client(Thread, QObject):
             ACTION: ADD_CONTACT,
             TIME: time.time(),
             USER: self.username,
-            ACCOUNT_NAME: contact
+            ACCOUNT_NAME: contact,
         }
         LOGGER.debug(f"Creating a contact {request[ACCOUNT_NAME]}")
         with socket_lock:
@@ -269,7 +244,7 @@ class Client(Thread, QObject):
             ACTION: DEL_CONTACT,
             TIME: time.time(),
             USER: self.username,
-            ACCOUNT_NAME: contact
+            ACCOUNT_NAME: contact,
         }
         LOGGER.debug(f"Removing a contact {request[ACCOUNT_NAME]}")
         with socket_lock:
@@ -282,11 +257,7 @@ class Client(Thread, QObject):
         :return:
         """
         self.running = False
-        request = {
-            ACTION: EXIT,
-            TIME: time.time(),
-            ACCOUNT_NAME: self.username
-        }
+        request = {ACTION: EXIT, TIME: time.time(), ACCOUNT_NAME: self.username}
         with socket_lock:
             try:
                 send_request(self.transport, request)
@@ -307,16 +278,14 @@ class Client(Thread, QObject):
             SENDER: self.username,
             RECEIVER: receiver,
             TIME: time.time(),
-            MESSAGE_TEXT: message_text
+            MESSAGE_TEXT: message_text,
         }
         LOGGER.debug(f"Configure a message dict: {message_dict}")
 
         with socket_lock:
             send_request(self.transport, message_dict)
             self.process_server_response(get_response(self.transport))
-            LOGGER.info(
-                f"Message has been sent to {message_dict[RECEIVER]}"
-            )
+            LOGGER.info(f"Message has been sent to {message_dict[RECEIVER]}")
 
     def run(self) -> None:
         LOGGER.debug("Start process - message received by server.")
@@ -334,11 +303,11 @@ class Client(Thread, QObject):
                         self.running = False
                         self.connection_lost.emit()
                 except (
-                        ConnectionError,
-                        ConnectionAbortedError,
-                        ConnectionResetError,
-                        JSONDecodeError,
-                        TypeError,
+                    ConnectionError,
+                    ConnectionAbortedError,
+                    ConnectionResetError,
+                    JSONDecodeError,
+                    TypeError,
                 ):
                     LOGGER.debug("Connection is lost")
                     self.running = False

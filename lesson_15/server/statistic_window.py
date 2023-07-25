@@ -34,8 +34,7 @@ class StatisticWindow(QDialog):
 
         lst = QStandardItemModel()
         lst.setHorizontalHeaderLabels(
-            ["Client username", "Last login",
-             "Messages send", "Messages received"]
+            ["Client username", "Last login", "Messages send", "Messages received"]
         )
         for row in stat_list:
             user, last_seen, sent, received = row
