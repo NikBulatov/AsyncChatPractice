@@ -50,7 +50,11 @@ def create_presence(account_name: str) -> dict:
     """
 
     LOGGER.debug(f"Message:{PRESENCE} is ready for user: {account_name}")
-    return {ACTION: PRESENCE, TIME: time.time(), USER: {ACCOUNT_NAME: account_name}}
+    return {
+        ACTION: PRESENCE,
+        TIME: time.time(),
+        USER: {ACCOUNT_NAME: account_name}
+    }
 
 
 @log

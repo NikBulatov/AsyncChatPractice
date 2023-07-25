@@ -27,13 +27,13 @@ class Client(Thread, QObject):
     connection_lost = pyqtSignal()
 
     def __init__(
-        self,
-        port: int,
-        ip_address: str,
-        database: ClientDatabase,
-        username: str,
-        password: str,
-        keys: RsaKey,
+            self,
+            port: int,
+            ip_address: str,
+            database: ClientDatabase,
+            username: str,
+            password: str,
+            keys: RsaKey,
     ):
         Thread.__init__(self)
         QObject.__init__(self)
@@ -82,7 +82,8 @@ class Client(Thread, QObject):
 
         if not connected:
             LOGGER.critical("Failed to establish a connection with the server")
-            raise ServerError("Failed to establish a connection with the server")
+            raise ServerError(
+                "Failed to establish a connection with the server")
 
         LOGGER.debug("A connection has established with server")
         LOGGER.debug("Starting auth dialog")
@@ -110,15 +111,17 @@ class Client(Thread, QObject):
                         case 511:
                             response_data = response[DATA]
                             hash = hmac.new(
-                                passwd_hash_string, response_data.encode("utf-8"), "MD5"
+                                passwd_hash_string,
+                                response_data.encode("utf-8"),
+                                "MD5"
                             )
                             digest = hash.digest()
                             my_response = RESPONSE_511
-                            my_response[DATA] = binascii.b2a_base64(digest).decode(
-                                "ascii"
-                            )
+                            my_response[DATA] = binascii.b2a_base64(
+                                digest).decode("ascii")
                             send_request(self.transport, my_response)
-                            self.process_server_response(get_response(self.transport))
+                            self.process_server_response(
+                                get_response(self.transport))
             except (OSError, JSONDecodeError) as e:
                 LOGGER.debug(f"Connection error.", exc_info=e)
                 raise ServerError("Failed to authenticate")
@@ -147,15 +150,16 @@ class Client(Thread, QObject):
                         self.contacts_list_update()
                         self.message_205.emit()
                     case _:
-                        LOGGER.debug(f"Received unknown code " f"{message[RESPONSE]}")
+                        LOGGER.debug(
+                            f"Received unknown code " f"{message[RESPONSE]}")
 
             elif (
-                ACTION in message
-                and message[ACTION] == MESSAGE
-                and SENDER in message
-                and RECEIVER in message
-                and MESSAGE_TEXT in message
-                and message[RECEIVER] == self.username
+                    ACTION in message
+                    and message[ACTION] == MESSAGE
+                    and SENDER in message
+                    and RECEIVER in message
+                    and MESSAGE_TEXT in message
+                    and message[RECEIVER] == self.username
             ):
                 LOGGER.debug(
                     f"Received a message by user "
@@ -170,7 +174,9 @@ class Client(Thread, QObject):
         :return:
         """
         LOGGER.debug(f"Contact list request for user {self.name}")
-        request = {ACTION: GET_CONTACTS, TIME: time.time(), USER: self.username}
+        request = {ACTION: GET_CONTACTS,
+                   TIME: time.time(),
+                   USER: self.username}
         LOGGER.debug(f"Request is {request}")
         with socket_lock:
             send_request(self.transport, request)
@@ -208,7 +214,9 @@ class Client(Thread, QObject):
         :return:
         """
         LOGGER.debug(f"Request public key for {user}")
-        request = {ACTION: PUBLIC_KEY_REQUEST, TIME: time.time(), ACCOUNT_NAME: user}
+        request = {ACTION: PUBLIC_KEY_REQUEST,
+                   TIME: time.time(),
+                   ACCOUNT_NAME: user}
         with socket_lock:
             send_request(self.transport, request)
             response = get_response(self.transport)
@@ -257,7 +265,9 @@ class Client(Thread, QObject):
         :return:
         """
         self.running = False
-        request = {ACTION: EXIT, TIME: time.time(), ACCOUNT_NAME: self.username}
+        request = {ACTION: EXIT,
+                   TIME: time.time(),
+                   ACCOUNT_NAME: self.username}
         with socket_lock:
             try:
                 send_request(self.transport, request)
@@ -303,11 +313,11 @@ class Client(Thread, QObject):
                         self.running = False
                         self.connection_lost.emit()
                 except (
-                    ConnectionError,
-                    ConnectionAbortedError,
-                    ConnectionResetError,
-                    JSONDecodeError,
-                    TypeError,
+                        ConnectionError,
+                        ConnectionAbortedError,
+                        ConnectionResetError,
+                        JSONDecodeError,
+                        TypeError,
                 ):
                     LOGGER.debug("Connection is lost")
                     self.running = False

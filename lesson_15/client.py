@@ -47,7 +47,12 @@ if __name__ == "__main__":
     database = ClientDatabase(client_name)
     try:
         transport = Client(
-            server_port, server_address, database, client_name, client_password, keys
+            server_port,
+            server_address,
+            database,
+            client_name,
+            client_password,
+            keys
         )
     except ServerError as error:
         message = QMessageBox()

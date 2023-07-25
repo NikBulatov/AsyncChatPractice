@@ -14,8 +14,10 @@ class ServerStorage:
         __tablename__ = "all_users"
         id: Mapped[int] = mapped_column(primary_key=True)
         name: Mapped[str] = mapped_column(String(50))
-        last_login: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.now())
-        pubkey: Mapped[Text] = mapped_column(Text(), default=None, nullable=True)
+        last_login: Mapped[DateTime] = mapped_column(DateTime(),
+                                                     default=datetime.now())
+        pubkey: Mapped[Text] = mapped_column(Text(), default=None,
+                                             nullable=True)
         password_hash: Mapped[Text] = mapped_column(Text())
 
     class ActiveUsers(Base):
@@ -25,7 +27,8 @@ class ServerStorage:
         user: Mapped[int] = mapped_column(
             ForeignKey("all_users.id", onupdate="CASCADE", ondelete="CASCADE")
         )
-        login_time: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.now())
+        login_time: Mapped[DateTime] = mapped_column(DateTime(),
+                                                     default=datetime.now())
         ip_address: Mapped[str] = mapped_column(String(15))
         port: Mapped[int] = mapped_column(Integer())
 
@@ -36,7 +39,8 @@ class ServerStorage:
         name: Mapped[int] = mapped_column(
             ForeignKey("all_users.id", onupdate="CASCADE", ondelete="CASCADE")
         )
-        date_time: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.now())
+        date_time: Mapped[DateTime] = mapped_column(DateTime(),
+                                                    default=datetime.now())
         ip: Mapped[str] = mapped_column(String(15))
         port: Mapped[int] = mapped_column(Integer())
 
@@ -190,16 +194,19 @@ class ServerStorage:
         """
         sender = self.session.query(self.AllUsers).filter_by(name=sender).first().id
         recipient = (
-            self.session.query(self.AllUsers).filter_by(name=recipient).first().id
+            self.session.query(self.AllUsers).
+            filter_by(name=recipient).first().id
         )
 
         sender_row = (
-            self.session.query(self.UsersHistory).filter_by(user=sender).first()
+            self.session.query(self.UsersHistory).
+            filter_by(user=sender).first()
         )
 
         sender_row.sent += 1
         recipient_row = (
-            self.session.query(self.UsersHistory).filter_by(user=recipient).first()
+            self.session.query(self.UsersHistory).
+            filter_by(user=recipient).first()
         )
         recipient_row.accepted += 1
         self.session.commit()
@@ -242,7 +249,8 @@ class ServerStorage:
             return
 
         self.session.query(self.UsersContacts).filter(
-            self.UsersContacts.user == user.id, self.UsersContacts.contact == contact.id
+            self.UsersContacts.user == user.id,
+            self.UsersContacts.contact == contact.id
         ).delete()
         self.session.commit()
 
@@ -252,7 +260,8 @@ class ServerStorage:
         Return all users (name and last login datetime)
         :return:
         """
-        query = self.session.query(self.AllUsers.name, self.AllUsers.last_login)
+        query = self.session.query(self.AllUsers.name,
+                                   self.AllUsers.last_login)
         return query.all()
 
     def active_users_list(self) -> Iterable:
@@ -295,7 +304,8 @@ class ServerStorage:
         query = (
             self.session.query(self.UsersContacts, self.AllUsers.name)
             .filter_by(user=user.id)
-            .join(self.AllUsers, self.UsersContacts.contact == self.AllUsers.id)
+            .join(self.AllUsers,
+                  self.UsersContacts.contact == self.AllUsers.id)
         )
 
         return [contact[1] for contact in query.all()]
