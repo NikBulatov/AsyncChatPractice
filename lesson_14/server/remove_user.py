@@ -37,7 +37,7 @@ class DelUserDialog(QDialog):
 
     def all_users_fill(self):
         self.selector.addItems([item[0]
-                                for item in self.database.users_list()])
+                                for item in self.database.users_list])
 
     def remove_user(self):
         self.database.remove_user(self.selector.currentText())

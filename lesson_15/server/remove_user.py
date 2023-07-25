@@ -33,11 +33,19 @@ class DelUserDialog(QDialog):
 
         self.all_users_fill()
 
-    def all_users_fill(self):
+    def all_users_fill(self) -> None:
+        """
+        Add all active users in selector
+        :return:
+        """
         self.selector.addItems([item[0]
-                                for item in self.database.users_list()])
+                                for item in self.database.users_list])
 
-    def remove_user(self):
+    def remove_user(self) -> None:
+        """
+        Trigger on OK button to remove user
+        :return:
+        """
         self.database.remove_user(self.selector.currentText())
         if self.selector.currentText() in self.server.names:
             sock = self.server.names[self.selector.currentText()]

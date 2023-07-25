@@ -60,7 +60,11 @@ class RegisterUser(QDialog):
 
         self.show()
 
-    def save_data(self):
+    def save_data(self) -> None:
+        """
+        Trigger on OK button to save a new user
+        :return:
+        """
         if not self.client_name.text():
             self.messages.critical(self, "Error", "Empty username")
             return

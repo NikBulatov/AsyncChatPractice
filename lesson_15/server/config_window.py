@@ -81,7 +81,11 @@ class ConfigWindow(QDialog):
         self.ip.insert(self.config["SETTINGS"]["Listen_Address"])
         self.save_btn.clicked.connect(self.save_server_config)
 
-    def open_file_dialog(self):
+    def open_file_dialog(self) -> None:
+        """
+        Init choose file dialog
+        :return:
+        """
         global dialog
         dialog = QFileDialog(self)
         path = dialog.getExistingDirectory()
@@ -89,7 +93,11 @@ class ConfigWindow(QDialog):
         self.db_path.clear()
         self.db_path.insert(path)
 
-    def save_server_config(self):
+    def save_server_config(self) -> None:
+        """
+        Trigger on button to save server configurations
+        :return:
+        """
         global config_window
         message = QMessageBox()
         self.config["SETTINGS"]["Database_path"] = self.db_path.text()

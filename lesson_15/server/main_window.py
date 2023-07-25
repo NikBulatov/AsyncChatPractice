@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow, QApplication, QLabel, QTableView
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction
 from PyQt6.QtCore import QTimer
-from .start_window import StartWindow
+from .start_window import StatisticWindow
 from .config_window import ConfigWindow
 from .add_user import RegisterUser
 from .remove_user import DelUserDialog
@@ -65,7 +65,11 @@ class MainWindow(QMainWindow):
 
         self.show()
 
-    def create_users_model(self):
+    def create_users_model(self) -> None:
+        """
+        Trigger to create or update active users list
+        :return:
+        """
         list_users = self.database.active_users_list()
         list_ = QStandardItemModel()
         list_.setHorizontalHeaderLabels(
@@ -86,21 +90,37 @@ class MainWindow(QMainWindow):
         self.active_clients_table.resizeColumnsToContents()
         self.active_clients_table.resizeRowsToContents()
 
-    def show_statistics(self):
+    def show_statistics(self) -> None:
+        """
+        Init and show statistic window
+        :return:
+        """
         global start_window
-        start_window = StartWindow(self.database)
+        start_window = StatisticWindow(self.database)
         start_window.show()
 
-    def server_config(self):
+    def server_config(self) -> None:
+        """
+        Init server config window
+        :return:
+        """
         global config_window
         config_window = ConfigWindow(self.config)
 
-    def register_user(self):
+    def register_user(self) -> None:
+        """
+        Init and show user registration window
+        :return:
+        """
         global reg_window
         reg_window = RegisterUser(self.database, self.server_thread)
         reg_window.show()
 
-    def remove_user(self):
+    def remove_user(self) -> None:
+        """
+        Init and show delete user window
+        :return:
+        """
         global rem_window
         rem_window = DelUserDialog(self.database, self.server_thread)
         rem_window.show()

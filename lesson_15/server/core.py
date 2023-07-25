@@ -39,7 +39,11 @@ class Server(Thread, metaclass=ServerVerifier):
         self.running = True
         super().__init__()
 
-    def init_socket(self):
+    def init_socket(self) -> None:
+        """
+        Init server socket with listening ip address and port
+        :return:
+        """
         LOGGER.info(
             f"Server started, listening port: {self.port}, "
             f"listening address: {self.addr}. "
@@ -114,7 +118,12 @@ class Server(Thread, metaclass=ServerVerifier):
                         new_connection = True
             self.messages.clear()
 
-    def remove_client(self, client: socket):
+    def remove_client(self, client: socket) -> None:
+        """
+        Remove client from active sessions and save logout datetime
+        :param client: client socket
+        :return:
+        """
         for name in self.names:
             if self.names[name] == client:
                 self.database.user_logout(name)
@@ -124,6 +133,11 @@ class Server(Thread, metaclass=ServerVerifier):
         client.close()
 
     def process_message(self, message: dict) -> None:
+        """
+        Clients message posthandler
+        :param message: message dict
+        :return:
+        """
         if message[variables.RECEIVER] in self.names:
             if self.names[message[variables.RECEIVER]] in self.listen_sockets:
                 try:
@@ -148,7 +162,13 @@ class Server(Thread, metaclass=ServerVerifier):
             )
 
     @login_required
-    def request_handler(self, request: dict, client: socket):
+    def request_handler(self, request: dict, client: socket) -> None:
+        """
+        Core request handler
+        :param request: request dict
+        :param client: client socket
+        :return:
+        """
         LOGGER.debug(f"Process client message: {request}")
         if variables.ACTION in request and variables.TIME in request:
             match request[variables.ACTION]:
@@ -236,7 +256,7 @@ class Server(Thread, metaclass=ServerVerifier):
                     ):
                         response = variables.RESPONSE_202
                         response[variables.LIST_INFO] = [
-                            user[0] for user in self.database.users_list()
+                            user[0] for user in self.database.users_list
                         ]
                         try:
                             send_request(client, response)
@@ -270,10 +290,15 @@ class Server(Thread, metaclass=ServerVerifier):
             except OSError:
                 self.remove_client(client)
 
-    def authorize_user(self, request: dict, sock: socket):
-        if request[variables.USER][
-            variables.ACCOUNT_NAME
-        ] in self.names.keys():
+    def authorize_user(self, request: dict, sock: socket) -> None:
+        """
+        Authorization request handler
+
+        :param request: request dict
+        :param sock: client socket
+        :return:
+        """
+        if request[variables.USER][variables.ACCOUNT_NAME] in self.names.keys():
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Current username exists"
             try:
@@ -342,7 +367,11 @@ class Server(Thread, metaclass=ServerVerifier):
                 self.clients.remove(sock)
                 sock.close()
 
-    def service_update_lists(self):
+    def service_update_lists(self) -> None:
+        """
+        Update connected clients list
+        :return:
+        """
         for client in self.names:
             try:
                 send_request(self.names[client], variables.RESPONSE_205)

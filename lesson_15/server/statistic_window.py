@@ -3,7 +3,7 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt
 
 
-class StartWindow(QDialog):
+class StatisticWindow(QDialog):
     def __init__(self, database):
         super().__init__()
 
@@ -25,7 +25,11 @@ class StartWindow(QDialog):
 
         self.create_stat_model()
 
-    def create_stat_model(self):
+    def create_stat_model(self) -> None:
+        """
+        Init models for statistic window
+        :return:
+        """
         stat_list = self.database.message_history()
 
         lst = QStandardItemModel()

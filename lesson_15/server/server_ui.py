@@ -13,11 +13,15 @@ from PyQt6.QtWidgets import (
     QFileDialog,
 )
 
+from server_models import ServerStorage
 
-def gui_create_model(database):
+
+def gui_create_model(database: ServerStorage) -> QStandardItemModel:
     list_users = database.active_users_list()
     lst = QStandardItemModel()
-    lst.setHorizontalHeaderLabels(["Client Name", "IP Address", "Port", "Last Login"])
+    lst.setHorizontalHeaderLabels(
+        ["Client Name", "IP Address", "Port", "Last Login"]
+    )
     for row in list_users:
         user, ip, port, time = row
         user = QStandardItem(user)
@@ -32,7 +36,7 @@ def gui_create_model(database):
     return lst
 
 
-def create_stat_model(database):
+def create_stat_model(database: ServerStorage) -> QStandardItemModel:
     hist_list = database.message_history()
 
     lst = QStandardItemModel()
@@ -131,7 +135,11 @@ class ConfigWindow(QDialog):
         self.db_path_select = QPushButton("Open...", self)
         self.db_path_select.move(275, 28)
 
-        def open_file_dialog():
+        def open_file_dialog() -> None:
+            """
+            Init open file dialog
+            :return:
+            """
             global dialog
             dialog = QFileDialog(self)
             path = dialog.getExistingDirectory()
@@ -161,7 +169,8 @@ class ConfigWindow(QDialog):
         self.ip_label.move(10, 148)
         self.ip_label.setFixedSize(180, 15)
 
-        self.ip_label_note = QLabel("Empty to accept connection by any address", self)
+        self.ip_label_note = QLabel(
+            "Empty to accept connection by any address", self)
         self.ip_label_note.move(10, 168)
         self.ip_label_note.setFixedSize(500, 30)
 

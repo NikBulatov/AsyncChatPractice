@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import NoReturn, Iterable
 
 from Crypto.PublicKey import RSA
 from sqlalchemy import (
@@ -95,7 +96,17 @@ class ServerStorage:
         self.session.query(self.ActiveUsers).delete()
         self.session.commit()
 
-    def user_login(self, username: str, ip_address: str, port: int, key: RSA):
+    def user_login(self, username: str, ip_address: str, port: int,
+                   key: RSA) -> None | NoReturn:
+        """
+        Check user exists and add it into database
+        ("ActiveUsers" and "LoginHistory" tables)
+        :param username:
+        :param ip_address:
+        :param port:
+        :param key:
+        :return:
+        """
         result = self.session.query(self.AllUsers).filter_by(name=username)
 
         if result.count():
@@ -121,7 +132,13 @@ class ServerStorage:
         self.session.add(history)
         self.session.commit()
 
-    def add_user(self, name: str, password_hash: str):
+    def add_user(self, name: str, password_hash: str) -> None:
+        """
+        Add a new user into database ("AllUsers" and "UsersHistory" tables)
+        :param name:
+        :param password_hash:
+        :return:
+        """
         user_row = self.AllUsers(name=name, password_hash=password_hash)
         self.session.add(user_row)
         self.session.commit()
@@ -129,7 +146,12 @@ class ServerStorage:
         self.session.add(history_row)
         self.session.commit()
 
-    def remove_user(self, name: str):
+    def remove_user(self, name: str) -> None:
+        """
+        Remove user from database (All tables)
+        :param name:
+        :return:
+        """
         user = self.session.query(self.AllUsers).filter_by(name=name).first()
         self.session.query(self.ActiveUsers).filter_by(user=user.id).delete()
         self.session.query(self.LoginHistory).filter_by(name=user.id).delete()
@@ -141,28 +163,54 @@ class ServerStorage:
         self.session.query(self.AllUsers).filter_by(name=name).delete()
         self.session.commit()
 
-    def get_hash(self, name: str):
+    def get_hash(self, name: str) -> str:
+        """
+        Return the user's password hash
+        :param name: a username
+        :return:
+        """
         user = self.session.query(self.AllUsers).filter_by(name=name).first()
         return user.password_hash
 
-    def get_pubkey(self, name: str):
+    def get_pubkey(self, name: str) -> str:
+        """
+        Return the user's public key
+        :param name: a username
+        :return:
+        """
         user = self.session.query(self.AllUsers).filter_by(name=name).first()
         return user.pubkey
 
-    def user_exists(self, name: str):
+    def user_exists(self, name: str) -> bool:
+        """
+        Check either user exists or not
+        :param name:
+        :return:
+        """
         if self.session.query(self.AllUsers).filter_by(name=name).count():
             return True
         else:
             return False
 
-    def user_logout(self, name: str):
+    def user_logout(self, name: str) -> None:
+        """
+        Delete the user from ActiveUsers table
+        :param name: a username
+        :return:
+        """
         user = self.session.query(
             self.AllUsers
         ).filter_by(name=name).first()
         self.session.query(self.ActiveUsers).filter_by(user=user.id).delete()
         self.session.commit()
 
-    def process_message(self, sender: str, recipient: str):
+    def process_message(self, sender: str, recipient: str) -> None:
+        """
+        Chat message handler
+        :param sender:
+        :param recipient:
+        :return:
+        """
         sender = self.session.query(
             self.AllUsers
         ).filter_by(name=sender).first().id
@@ -182,7 +230,13 @@ class ServerStorage:
         recipient_row.accepted += 1
         self.session.commit()
 
-    def add_contact(self, user: AllUsers, contact: UsersContacts):
+    def add_contact(self, user: AllUsers, contact: UsersContacts) -> None:
+        """
+        Add the user into contact list
+        :param user: instance of AllUsers model
+        :param contact: instance of UserContacts model
+        :return:
+        """
         user = self.session.query(self.AllUsers).filter_by(name=user).first()
         contact = self.session.query(self.AllUsers).filter_by(
             name=contact).first()
@@ -198,7 +252,13 @@ class ServerStorage:
         self.session.add(contact_row)
         self.session.commit()
 
-    def remove_contact(self, user: AllUsers, contact: UsersContacts):
+    def remove_contact(self, user: AllUsers, contact: UsersContacts) -> None:
+        """
+        Remove the user from contact list
+        :param user: instance of AllUsers model
+        :param contact: instance of UsersContacts model
+        :return:
+        """
         user = self.session.query(self.AllUsers).filter_by(name=user).first()
         contact = self.session.query(self.AllUsers).filter_by(
             name=contact).first()
@@ -212,12 +272,21 @@ class ServerStorage:
         ).delete()
         self.session.commit()
 
-    def users_list(self):
+    @property
+    def users_list(self) -> Iterable:
+        """
+        Return all users (name and last login datetime)
+        :return:
+        """
         query = self.session.query(self.AllUsers.name,
                                    self.AllUsers.last_login)
         return query.all()
 
-    def active_users_list(self):
+    def active_users_list(self) -> Iterable:
+        """
+        Return active users
+        :return:
+        """
         query = self.session.query(
             self.AllUsers.name,
             self.ActiveUsers.ip_address,
@@ -226,7 +295,12 @@ class ServerStorage:
         ).join(self.AllUsers)
         return query.all()
 
-    def login_history(self, name=None):
+    def login_history(self, name: str = None) -> Iterable:
+        """
+        Return all users' login history
+        :param name: a username
+        :return:
+        """
         query = self.session.query(
             self.AllUsers.name,
             self.LoginHistory.date_time,
@@ -237,7 +311,12 @@ class ServerStorage:
             query = query.filter(self.AllUsers.name == name)
         return query.all()
 
-    def get_contacts(self, name):
+    def get_contacts(self, name: str) -> Iterable:
+        """
+        Return the user's contacts
+        :param name: a username
+        :return:
+        """
         user = self.session.query(self.AllUsers).filter_by(name=name).one()
 
         query = (
@@ -249,7 +328,7 @@ class ServerStorage:
 
         return [contact[1] for contact in query.all()]
 
-    def message_history(self):
+    def message_history(self) -> Iterable:
         query = self.session.query(
             self.AllUsers.name,
             self.AllUsers.last_login,
