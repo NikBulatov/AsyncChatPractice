@@ -40,14 +40,22 @@ class AddContactDialog(QDialog):
         self.possible_contacts_update()
         self.btn_refresh.clicked.connect(self.update_possible_contacts)
 
-    def possible_contacts_update(self):
+    def possible_contacts_update(self) -> None:
+        """
+        Check contacts, which could be updated
+        :return:
+        """
         self.selector.clear()
         contacts_list = set(self.database.get_contacts())
         users_list = set(self.database.get_users())
         users_list.remove(self.transport.username)
         self.selector.addItems(users_list - contacts_list)
 
-    def update_possible_contacts(self):
+    def update_possible_contacts(self) -> None:
+        """
+        Update contact list
+        :return:
+        """
         try:
             self.transport.user_list_update()
         except OSError:

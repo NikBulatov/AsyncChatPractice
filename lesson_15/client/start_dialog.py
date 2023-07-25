@@ -42,7 +42,11 @@ class UserNameDialog(QDialog):
         self.btn_cancel.clicked.connect(QApplication.exit)
         self.show()
 
-    def click(self):
+    def click(self) -> None:
+        """
+        Trigger on click
+        :return:
+        """
         if self.client_name.text() and self.client_password.text():
             self.ok_pressed = True
             QApplication.exit()

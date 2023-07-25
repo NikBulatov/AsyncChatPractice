@@ -56,7 +56,13 @@ class Client(Thread, QObject):
             raise ServerError("Connection with server is lost")
         self.running = True
 
-    def connection_init(self, ip: str, port: int):
+    def connection_init(self, ip: str, port: int) -> None:
+        """
+        Wait and init any connection with clients on passed ip address and port
+        :param ip: listening ip address
+        :param port: listening port
+        :return:
+        """
         self.transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.transport.settimeout(5)
 
@@ -123,6 +129,16 @@ class Client(Thread, QObject):
                 raise ServerError("Failed to authenticate")
 
     def process_server_response(self, message: dict) -> None:
+        """
+        Generate response by server on received message
+        or process message request
+        Possible responses:\n
+        200 - OK\n
+        400 - Bad request\n
+        205 - Reset Content
+        :param message: dict message
+        :return:
+        """
         LOGGER.debug(f"Parse server message: {message}")
         if isinstance(message, dict):
             if RESPONSE in message:
@@ -156,7 +172,11 @@ class Client(Thread, QObject):
                 )
                 self.new_message.emit(message)
 
-    def contacts_list_update(self):
+    def contacts_list_update(self) -> None:
+        """
+        Contact list update request handler
+        :return:
+        """
         LOGGER.debug(f"Contact list request for user {self.name}")
         request = {
             ACTION: GET_CONTACTS,
@@ -177,7 +197,11 @@ class Client(Thread, QObject):
         else:
             LOGGER.error("Failed to update contact list")
 
-    def user_list_update(self):
+    def user_list_update(self) -> None:
+        """
+        Known contact list update request handler
+        :return:
+        """
         LOGGER.debug(f"Known contact list reqeust {self.username}")
         request = {
             ACTION: USERS_REQUEST,
@@ -195,7 +219,12 @@ class Client(Thread, QObject):
         else:
             LOGGER.error("Failed to update known contact list")
 
-    def key_request(self, user: str):
+    def key_request(self, user: str) -> str | bytes | None:
+        """
+        Key request request handler
+        :param user: a username
+        :return:
+        """
         LOGGER.debug(f"Request public key for {user}")
         request = {
             ACTION: PUBLIC_KEY_REQUEST,
@@ -213,7 +242,12 @@ class Client(Thread, QObject):
         else:
             LOGGER.error(f"Failed to get recipient pubkey by {user}.")
 
-    def add_contact(self, contact: str):
+    def add_contact(self, contact: str) -> None:
+        """
+        Add contact request handler
+        :param contact:
+        :return:
+        """
         request = {
             ACTION: ADD_CONTACT,
             TIME: time.time(),
@@ -225,7 +259,12 @@ class Client(Thread, QObject):
             send_request(self.transport, request)
             self.process_server_response(get_response(self.transport))
 
-    def remove_contact(self, contact: str):
+    def remove_contact(self, contact: str) -> None:
+        """
+        Remove contact request handler
+        :param contact: a contact name
+        :return:
+        """
         request = {
             ACTION: DEL_CONTACT,
             TIME: time.time(),
@@ -237,7 +276,11 @@ class Client(Thread, QObject):
             send_request(self.transport, request)
             self.process_server_response(get_response(self.transport))
 
-    def transport_shutdown(self):
+    def transport_shutdown(self) -> None:
+        """
+        Exit request handler
+        :return:
+        """
         self.running = False
         request = {
             ACTION: EXIT,
@@ -252,7 +295,13 @@ class Client(Thread, QObject):
         LOGGER.debug("Client close connection")
         time.sleep(0.5)
 
-    def send_message(self, receiver: str, message_text: str):
+    def send_message(self, receiver: str, message_text: str) -> None:
+        """
+        Message request handler
+        :param receiver: a receiver name
+        :param message_text:
+        :return:
+        """
         message_dict = {
             ACTION: MESSAGE,
             SENDER: self.username,
@@ -269,7 +318,7 @@ class Client(Thread, QObject):
                 f"Message has been sent to {message_dict[RECEIVER]}"
             )
 
-    def run(self):
+    def run(self) -> None:
         LOGGER.debug("Start process - message received by server.")
         while self.running:
             time.sleep(0.75)

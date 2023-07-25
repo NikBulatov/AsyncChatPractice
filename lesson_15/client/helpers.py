@@ -7,28 +7,18 @@ from socket import socket
 sys.path.append("../")
 
 from services.common import log, send_request
-from services.variables import (
-    ACTION,
-    PRESENCE,
-    TIME,
-    USER,
-    ACCOUNT_NAME,
-    EXIT,
-    SENDER,
-    MESSAGE_TEXT,
-    RECEIVER,
-    ERROR,
-    MESSAGE,
-    RESPONSE,
-    DEFAULT_PORT,
-)
+from services.variables import *
 from services.errors import ServerError, NonDictionaryInputError
 
 LOGGER = logging.getLogger("client")
 
 
 @log
-def parse_client_args():
+def parse_client_args() -> tuple:
+    """
+    Return tuple with passed arguments via CML
+    :return:
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("addr", default="localhost", type=str, nargs='?')
     parser.add_argument("port", default=DEFAULT_PORT, type=int, nargs='?')
@@ -53,9 +43,9 @@ def parse_client_args():
 @log
 def create_presence(account_name: str) -> dict:
     """
-    Function to create a presence message with the given account name
+    Create a presence message with the given account name
 
-    :param account_name: str
+    :param account_name:
     :return: dict
     """
 
@@ -67,9 +57,9 @@ def create_presence(account_name: str) -> dict:
 @log
 def create_exit(account_name: str) -> dict:
     """
-    Function to create an exit message with the given account name
+    Create an exit message with the given account name
     :param account_name:
-    :return:
+    :return: dict
     """
     return {ACTION: EXIT, TIME: time.time(), ACCOUNT_NAME: account_name}
 
@@ -77,7 +67,7 @@ def create_exit(account_name: str) -> dict:
 @log
 def process_server_response(message: dict) -> str:
     """
-    The function parses the server's response to the presence message,
+    Parse the server's response to the presence message,
     returns 200 if everything is OK, or raise an exception due to errors
 
     :param message: dict
@@ -95,8 +85,9 @@ def process_server_response(message: dict) -> str:
 @log
 def create_message(sock: socket, account_name: str):
     """
-    The function requests the message text and returns it.
+    Request the message text and returns it.
     It also closes script when user enter a similar command.
+
     :param sock: socket
     :param account_name: str
     """
@@ -118,34 +109,3 @@ def create_message(sock: socket, account_name: str):
         print(e)
         LOGGER.critical("Connection is lost")
         sys.exit(1)
-
-
-@log
-def cmd_interface(sock: socket, account_name: str) -> None:
-    """
-    Function to interact with user
-    :param sock:
-    :param account_name:
-    :return:
-    """
-    info_commands = """Supported commands:
-    - "message" - send a message;
-    - "help" - output help information about supported commands;
-    - "exit" - quit the program
-    """
-
-    while True:
-        command = input('Input command. To show help input "help":\n\r')
-        match command:
-            case "message":
-                create_message(sock, account_name)
-            case "help":
-                print(info_commands)
-            case "exit":
-                send_request(sock, create_exit(account_name))
-                print("Close connections")
-                LOGGER.info("Completion of work on the user's command.")
-                time.sleep(0.5)
-                break
-            case _:
-                print('Bad command. To show help information input "help"')

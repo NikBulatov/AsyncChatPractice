@@ -10,6 +10,7 @@ from PyQt6.QtCore import pyqtSlot, Qt
 from .add_contact import AddContactDialog
 from .del_contact import DelContactDialog
 from .main_window_conv import Ui_MainClientWindow
+from .transport import Client
 
 sys.path.append("../")
 
@@ -55,9 +56,13 @@ class ClientMainWindow(QMainWindow):
         self.set_disabled_input()
         self.show()
 
-    def set_disabled_input(self):
+    def set_disabled_input(self) -> None:
+        """
+        Disable buttons if a recipient is not chosen
+        :return:
+        """
         self.ui.label_new_message.setText(
-            "To select a recipient, double-click on it in the contacts window."
+            "To select a recipient, double-click on it in the contacts window"
         )
         self.ui.text_message.clear()
         if self.history_model:
@@ -71,7 +76,11 @@ class ClientMainWindow(QMainWindow):
         self.current_chat = None
         self.current_chat_key = None
 
-    def history_list_update(self):
+    def history_list_update(self) -> None:
+        """
+        Update message history
+        :return:
+        """
         list = sorted(
             self.database.get_history(self.current_chat),
             key=lambda item: item[3]
@@ -105,11 +114,19 @@ class ClientMainWindow(QMainWindow):
                 self.history_model.appendRow(mess)
         self.ui.list_messages.scrollToBottom()
 
-    def select_active_user(self):
+    def select_active_user(self) -> None:
+        """
+        Trigger on selecting active user
+        :return:
+        """
         self.current_chat = self.ui.list_contacts.currentIndex().data()
         self.set_active_user()
 
-    def set_active_user(self):
+    def set_active_user(self) -> None:
+        """
+        Activate a chat with early selected contact
+        :return:
+        """
         try:
             self.current_chat_key = self.transport.key_request(
                 self.current_chat)
@@ -136,7 +153,11 @@ class ClientMainWindow(QMainWindow):
 
         self.history_list_update()
 
-    def clients_list_update(self):
+    def clients_list_update(self) -> None:
+        """
+        Update contact list
+        :return:
+        """
         contacts_list = self.database.get_contacts()
         self.contacts_model = QStandardItemModel()
         for i in sorted(contacts_list):
@@ -146,6 +167,10 @@ class ClientMainWindow(QMainWindow):
         self.ui.list_contacts.setModel(self.contacts_model)
 
     def add_contact_window(self):
+        """
+        Trigger on the add contact button
+        :return:
+        """
         global select_dialog
         select_dialog = AddContactDialog(self.transport, self.database)
         select_dialog.btn_ok.clicked.connect(
@@ -159,6 +184,11 @@ class ClientMainWindow(QMainWindow):
         item.close()
 
     def add_contact(self, new_contact):
+        """
+        Add a new user in contact list
+        :param new_contact: username of a new contact
+        :return:
+        """
         try:
             self.transport.add_contact(new_contact)
         except ServerError as e:
@@ -184,7 +214,11 @@ class ClientMainWindow(QMainWindow):
                 "Successfully contact added."
             )
 
-    def delete_contact_window(self):
+    def delete_contact_window(self) -> None:
+        """
+        Init and open delete contact window
+        :return:
+        """
         global remove_dialog
         remove_dialog = DelContactDialog(self.database)
         remove_dialog.btn_ok.clicked.connect(
@@ -192,7 +226,12 @@ class ClientMainWindow(QMainWindow):
         )
         remove_dialog.show()
 
-    def delete_contact(self, item):
+    def delete_contact(self, item) -> None:
+        """
+        Delete a user from contact list
+        :param item:
+        :return:
+        """
         selected = item.selector.currentText()
         try:
             self.transport.remove_contact(selected)
@@ -218,7 +257,11 @@ class ClientMainWindow(QMainWindow):
                 self.current_chat = None
                 self.set_disabled_input()
 
-    def send_message(self):
+    def send_message(self) -> None:
+        """
+        Trigger on send message button
+        :return:
+        """
         message_text = self.ui.text_message.toPlainText()
         self.ui.text_message.clear()
         if not message_text:
@@ -251,6 +294,11 @@ class ClientMainWindow(QMainWindow):
 
     @pyqtSlot(dict)
     def message(self, reqeust: dict):
+        """
+        Send message
+        :param reqeust: a message dict
+        :return:
+        """
         encrypted_message = base64.b64decode(reqeust[variables.MESSAGE_TEXT])
         try:
             decrypted_message = self.decrypter.decrypt(encrypted_message)
@@ -297,14 +345,22 @@ class ClientMainWindow(QMainWindow):
                     self.set_active_user()
 
     @pyqtSlot()
-    def connection_lost(self):
+    def connection_lost(self) -> None:
+        """
+        Connection lost handler
+        :return:
+        """
         self.messages.warning(
-            self, "Connection is failed", "Connection with server is lost. "
+            self, "Connection is failed", "Connection with server is lost."
         )
         self.close()
 
     @pyqtSlot()
-    def sig_205(self):
+    def sig_205(self) -> None:
+        """
+        Reset content handler
+        :return:
+        """
         if self.current_chat and not self.database.user_exists(
                 self.current_chat):
             self.messages.warning(
@@ -315,7 +371,12 @@ class ClientMainWindow(QMainWindow):
             self.current_chat = None
         self.clients_list_update()
 
-    def make_connection(self, trans_obj):
+    def make_connection(self, trans_obj: Client) -> None:
+        """
+        Make connection handler
+        :param trans_obj: client socket
+        :return:
+        """
         trans_obj.new_message.connect(self.message)
         trans_obj.connection_lost.connect(self.connection_lost)
         trans_obj.message_205.connect(self.sig_205)

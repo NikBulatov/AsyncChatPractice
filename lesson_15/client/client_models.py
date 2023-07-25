@@ -55,7 +55,12 @@ class ClientDatabase:
         self.session.query(self.Contacts).delete()
         self.session.commit()
 
-    def add_contact(self, contact: str):
+    def add_contact(self, contact: str) -> None:
+        """
+        Create a new contact and add it into database
+        :param contact: a contact name
+        :return:
+        """
         if not self.session.query(
                 self.Contacts
         ).filter_by(name=contact).count():
@@ -64,10 +69,20 @@ class ClientDatabase:
             self.session.add(contact_row)
             self.session.commit()
 
-    def del_contact(self, contact: str):
+    def del_contact(self, contact: str) -> None:
+        """
+        Delete contact from database
+        :param contact: a contact name
+        :return:
+        """
         self.session.query(self.Contacts).filter_by(name=contact).delete()
 
-    def add_users(self, users_list: list):
+    def add_users(self, users_list: list) -> None:
+        """
+        Add users in list known contacts
+        :param users_list: a known contact list
+        :return:
+        """
         self.session.query(self.KnownUsers).delete()
         for user in users_list:
             user_row = self.KnownUsers()
@@ -78,7 +93,14 @@ class ClientDatabase:
     def save_message(self,
                      contact: str,
                      direction: str,
-                     message: str):
+                     message: str) -> None:
+        """
+
+        :param contact: a contact name
+        :param direction: direction of message sending
+        :param message: message text
+        :return:
+        """
         message_row = self.MessageHistory()
         message_row.contact = contact
         message_row.direction = direction
@@ -86,15 +108,28 @@ class ClientDatabase:
         self.session.add(message_row)
         self.session.commit()
 
-    def get_contacts(self):
+    def get_contacts(self) -> list:
+        """
+        Return all contacts
+        :return: list of contact names
+        """
         return [contact[0]
                 for contact in self.session.query(self.Contacts.name).all()]
 
-    def get_users(self):
+    def get_users(self) -> list:
+        """
+        Return all known users
+        :return:
+        """
         return [user[0]
                 for user in self.session.query(self.KnownUsers.username).all()]
 
-    def user_exists(self, user: str):
+    def user_exists(self, user: str) -> bool:
+        """
+        Check either user exists or not
+        :param user: a username
+        :return:
+        """
         if self.session.query(
                 self.KnownUsers
         ).filter_by(username=user).count():
@@ -102,13 +137,23 @@ class ClientDatabase:
         else:
             return False
 
-    def contact_exists(self, contact: str):
+    def contact_exists(self, contact: str) -> bool:
+        """
+        Check either contact exists or not
+        :param contact: a contact name
+        :return:
+        """
         if self.session.query(self.Contacts).filter_by(name=contact).count():
             return True
         else:
             return False
 
-    def get_history(self, contact: str):
+    def get_history(self, contact: str) -> list[tuple]:
+        """
+        Return message history with the contact
+        :param contact: a contact name
+        :return:
+        """
         query = self.session.query(
             self.MessageHistory
         ).filter_by(contact=contact)
