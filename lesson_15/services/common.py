@@ -6,10 +6,14 @@ from functools import wraps
 from socket import socket
 
 from .errors import IncorrectDataReceivedError, NonDictionaryInputError
-from .variables import MAX_PACKAGE_LENGTH, ENCODING
+from .variables import MAX_PACKAGE_LENGTH, ENCODING, ACTION, PRESENCE
 
 
-def _get_logger():
+def _get_logger() -> logging.Logger:
+    """
+    Return client or server logger. It depends by module
+    :return:
+    """
     if sys.argv[0].find("client") == -1:
         logger = logging.getLogger("server")
     else:
@@ -23,8 +27,8 @@ LOGGER = _get_logger()
 def log(func: callable) -> callable:
     """
     Decorator for logging when and where decorated function was called
-    :param func: callable
-    :return: callable
+    :param func:
+    :return:
     """
 
     @wraps(func)
@@ -40,10 +44,15 @@ def log(func: callable) -> callable:
     return wrapper
 
 
-def login_required(func):
-    def checker(*args, **kwargs):
-        from .variables import ACTION, PRESENCE
+def login_required(func: callable) -> callable:
+    """
+    Decorator to check user login
+    :param func:
+    :return:
+    """
 
+    @wraps(func)
+    def checker(*args, **kwargs):
         sys.path.append("../")
         from server.core import Server
 
@@ -69,7 +78,7 @@ def login_required(func):
 @log
 def get_response(client: socket) -> dict:
     """
-    A function for receiving and decoding a message, accepts bytes,
+    Receive and decode a message. It accepts bytes,
     returns a dictionary or raise an exception due to an error value
 
     :param client: socket
@@ -88,8 +97,7 @@ def get_response(client: socket) -> dict:
 @log
 def send_request(sock: socket, message: dict) -> None:
     """
-    The function of encoding and sending a message,
-    it takes a dictionary and sends it.
+    Encode and send a message. It takes a dictionary and sends it.
 
     :param sock: socket
     :param message:
