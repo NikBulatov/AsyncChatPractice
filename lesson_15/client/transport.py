@@ -13,8 +13,8 @@ from PyQt6.QtCore import QObject, pyqtSignal
 sys.path.append("../")
 from logs import client_log_config
 from services.errors import *
-from services import variables
-from services.common import send_message, get_response
+from services.variables import *
+from services.common import send_request, get_response
 from client.client_models import ClientDatabase
 
 LOGGER = logging.getLogger("client")
@@ -88,27 +88,33 @@ class Client(Thread, QObject):
         pubkey = self.keys.publickey().export_key().decode("ascii")
 
         with socket_lock:
-            request = self.create_request(variables.PRESENCE)
-            request[variables.USER].update({variables.PUBLIC_KEY: pubkey})
+            request = {
+                ACTION: PRESENCE,
+                TIME: time.time(),
+                USER: {
+                    ACCOUNT_NAME: self.username,
+                    PUBLIC_KEY: pubkey
+                }
+            }
             try:
-                send_message(self.transport, request)
+                send_request(self.transport, request)
                 response = get_response(self.transport)
-                if variables.RESPONSE in response:
-                    match response[variables.RESPONSE]:
+                if RESPONSE in response:
+                    match response[RESPONSE]:
                         case 400:
-                            raise ServerError(response[variables.ERROR])
+                            raise ServerError(response[ERROR])
                         case 511:
-                            response_data = response[variables.DATA]
+                            response_data = response[DATA]
                             hash = hmac.new(
                                 passwd_hash_string,
                                 response_data.encode("utf-8"),
                                 "MD5"
                             )
                             digest = hash.digest()
-                            my_response = variables.RESPONSE_511
-                            my_response[variables.DATA] = binascii.b2a_base64(
+                            my_response = RESPONSE_511
+                            my_response[DATA] = binascii.b2a_base64(
                                 digest).decode("ascii")
-                            send_message(self.transport, my_response)
+                            send_request(self.transport, my_response)
                             self.process_server_response(
                                 get_response(self.transport)
                             )
@@ -116,54 +122,15 @@ class Client(Thread, QObject):
                 LOGGER.debug(f"Connection error.", exc_info=e)
                 raise ServerError("Failed to authenticate")
 
-    def create_request(self, action: str) -> dict:
-        request = {variables.TIME: time.time()}
-        match action:
-            case variables.PRESENCE:
-                LOGGER.debug(
-                    f"Message:{variables.PRESENCE} is ready for user: "
-                    f"{self.username}"
-                )
-                request[variables.ACTION] = variables.PRESENCE
-                request[variables.USER] = {
-                    variables.ACCOUNT_NAME: self.username}
-            case variables.EXIT:
-                request[variables.ACTION] = variables.EXIT
-                request[variables.ACCOUNT_NAME] = self.username
-            case variables.GET_CONTACTS:
-                request[variables.ACTION] = variables.GET_CONTACTS
-                request[variables.USER] = self.username
-            case variables.MESSAGE:
-                request[variables.ACTION] = variables.MESSAGE
-                request[variables.SENDER] = self.username
-                try:
-                    send_message(self.transport, request)
-                except Exception as e:
-                    print(e)
-                    LOGGER.critical("Connection is lost")
-                    exit(1)
-            case variables.ADD_CONTACT:
-                request[variables.ACTION] = variables.ADD_CONTACT
-                request[variables.USER] = self.username
-            case variables.DEL_CONTACT:
-                request[variables.ACTION] = variables.DEL_CONTACT
-                request[variables.USER] = self.username
-            case variables.USERS_REQUEST:
-                request[variables.ACTION] = variables.USERS_REQUEST
-                request[variables.ACCOUNT_NAME] = self.username
-            case variables.PUBLIC_KEY_REQUEST:
-                request[variables.ACTION] = variables.PUBLIC_KEY_REQUEST
-        return request
-
-    def process_server_response(self, message: dict) -> str | None:
+    def process_server_response(self, message: dict) -> None:
         LOGGER.debug(f"Parse server message: {message}")
         if isinstance(message, dict):
-            if variables.RESPONSE in message:
-                match message[variables.RESPONSE]:
+            if RESPONSE in message:
+                match message[RESPONSE]:
                     case 200:
                         return
                     case 400:
-                        raise ServerError(f"{message[variables.ERROR]}")
+                        raise ServerError(f"{message[ERROR]}")
                     case 205:
                         self.user_list_update()
                         self.contacts_list_update()
@@ -171,112 +138,135 @@ class Client(Thread, QObject):
                     case _:
                         LOGGER.debug(
                             f"Received unknown code "
-                            f"{message[variables.RESPONSE]}"
+                            f"{message[RESPONSE]}"
                         )
 
             elif (
-                    variables.ACTION in message
-                    and message[variables.ACTION] == variables.MESSAGE
-                    and variables.SENDER in message
-                    and variables.RECEIVER in message
-                    and variables.MESSAGE_TEXT in message
-                    and message[variables.RECEIVER] == self.username
+                    ACTION in message
+                    and message[ACTION] == MESSAGE
+                    and SENDER in message
+                    and RECEIVER in message
+                    and MESSAGE_TEXT in message
+                    and message[RECEIVER] == self.username
             ):
                 LOGGER.debug(
                     f"Received a message by user "
-                    f"{message[variables.SENDER]}:"
-                    f"{message[variables.MESSAGE_TEXT]}"
+                    f"{message[SENDER]}:"
+                    f"{message[MESSAGE_TEXT]}"
                 )
-                self.database.save_message(
-                    message[variables.SENDER], "in",
-                    message[variables.MESSAGE_TEXT]
-                )
-                self.new_message.emit(message[variables.SENDER])
+                self.new_message.emit(message)
 
     def contacts_list_update(self):
         LOGGER.debug(f"Contact list request for user {self.name}")
-        request = self.create_request(variables.GET_CONTACTS)
+        request = {
+            ACTION: GET_CONTACTS,
+            TIME: time.time(),
+            USER: self.username
+        }
         LOGGER.debug(f"Request is {request}")
         with socket_lock:
-            send_message(self.transport, request)
+            send_request(self.transport, request)
             response = get_response(self.transport)
         LOGGER.debug(f"Response is received {response}")
         if (
-                variables.RESPONSE in response
-                and response[variables.RESPONSE] == 202
+                RESPONSE in response
+                and response[RESPONSE] == 202
         ):
-            for contact in response[variables.LIST_INFO]:
+            for contact in response[LIST_INFO]:
                 self.database.add_contact(contact)
         else:
             LOGGER.error("Failed to update contact list")
 
     def user_list_update(self):
         LOGGER.debug(f"Known contact list reqeust {self.username}")
-        request = self.create_request(variables.USERS_REQUEST)
+        request = {
+            ACTION: USERS_REQUEST,
+            TIME: time.time(),
+            ACCOUNT_NAME: self.username
+        }
         with socket_lock:
-            send_message(self.transport, request)
+            send_request(self.transport, request)
             response = get_response(self.transport)
         if (
-                variables.RESPONSE in response
-                and response[variables.RESPONSE] == 202
+                RESPONSE in response
+                and response[RESPONSE] == 202
         ):
-            self.database.add_users(response[variables.LIST_INFO])
+            self.database.add_users(response[LIST_INFO])
         else:
             LOGGER.error("Failed to update known contact list")
 
     def key_request(self, user: str):
         LOGGER.debug(f"Request public key for {user}")
-        request = self.create_request(variables.PUBLIC_KEY_REQUEST)
-        request[variables.ACCOUNT_NAME] = user
+        request = {
+            ACTION: PUBLIC_KEY_REQUEST,
+            TIME: time.time(),
+            ACCOUNT_NAME: user
+        }
         with socket_lock:
-            send_message(self.transport, request)
+            send_request(self.transport, request)
             response = get_response(self.transport)
         if (
-                variables.RESPONSE in response
-                and response[variables.RESPONSE] == 511
+                RESPONSE in response
+                and response[RESPONSE] == 511
         ):
-            return response[variables.DATA]
+            return response[DATA]
         else:
             LOGGER.error(f"Failed to get recipient pubkey by {user}.")
 
     def add_contact(self, contact: str):
-        request = self.create_request(variables.ADD_CONTACT)
-        request[variables.ACCOUNT_NAME] = contact
-        LOGGER.debug(f"Creating a contact {request[variables.ACCOUNT_NAME]}")
+        request = {
+            ACTION: ADD_CONTACT,
+            TIME: time.time(),
+            USER: self.username,
+            ACCOUNT_NAME: contact
+        }
+        LOGGER.debug(f"Creating a contact {request[ACCOUNT_NAME]}")
         with socket_lock:
-            send_message(self.transport, request)
+            send_request(self.transport, request)
             self.process_server_response(get_response(self.transport))
 
     def remove_contact(self, contact: str):
-        request = self.create_request(variables.DEL_CONTACT)
-        request[variables.ACCOUNT_NAME] = contact
-        LOGGER.debug(f"Removing a contact {request[variables.ACCOUNT_NAME]}")
+        request = {
+            ACTION: DEL_CONTACT,
+            TIME: time.time(),
+            USER: self.username,
+            ACCOUNT_NAME: contact
+        }
+        LOGGER.debug(f"Removing a contact {request[ACCOUNT_NAME]}")
         with socket_lock:
-            send_message(self.transport, request)
+            send_request(self.transport, request)
             self.process_server_response(get_response(self.transport))
 
     def transport_shutdown(self):
         self.running = False
-        message = self.create_request(variables.EXIT)
+        request = {
+            ACTION: EXIT,
+            TIME: time.time(),
+            ACCOUNT_NAME: self.username
+        }
         with socket_lock:
             try:
-                send_message(self.transport, message)
+                send_request(self.transport, request)
             except OSError:
                 LOGGER.error("Failed to send message")
         LOGGER.debug("Client close connection")
         time.sleep(0.5)
 
     def send_message(self, receiver: str, message_text: str):
-        message_dict = self.create_request(variables.MESSAGE)
-        message_dict[variables.MESSAGE_TEXT] = message_text
-        message_dict[variables.RECEIVER] = receiver
-        LOGGER.debug(f"Configure a message dict : {message_dict}")
+        message_dict = {
+            ACTION: MESSAGE,
+            SENDER: self.username,
+            RECEIVER: receiver,
+            TIME: time.time(),
+            MESSAGE_TEXT: message_text
+        }
+        LOGGER.debug(f"Configure a message dict: {message_dict}")
 
         with socket_lock:
-            send_message(self.transport, message_dict)
+            send_request(self.transport, message_dict)
             self.process_server_response(get_response(self.transport))
             LOGGER.info(
-                f"Message has been sent to {message_dict[variables.RECEIVER]}"
+                f"Message has been sent to {message_dict[RECEIVER]}"
             )
 
     def run(self):

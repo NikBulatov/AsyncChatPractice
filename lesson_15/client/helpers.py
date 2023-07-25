@@ -6,7 +6,7 @@ from socket import socket
 
 sys.path.append("../")
 
-from services.common import log, send_message
+from services.common import log, send_request
 from services.variables import (
     ACTION,
     PRESENCE,
@@ -112,7 +112,7 @@ def create_message(sock: socket, account_name: str):
     }
     LOGGER.debug(f"Message created: {message_dict}")
     try:
-        send_message(sock, message_dict)
+        send_request(sock, message_dict)
         LOGGER.info(f"Message was sent to {receiver}")
     except Exception as e:
         print(e)
@@ -142,7 +142,7 @@ def cmd_interface(sock: socket, account_name: str) -> None:
             case "help":
                 print(info_commands)
             case "exit":
-                send_message(sock, create_exit(account_name))
+                send_request(sock, create_exit(account_name))
                 print("Close connections")
                 LOGGER.info("Completion of work on the user's command.")
                 time.sleep(0.5)

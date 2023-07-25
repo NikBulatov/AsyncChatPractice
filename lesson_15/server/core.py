@@ -14,7 +14,7 @@ from logs import server_log_config
 from services import variables
 from services.descriptors import Port
 from services.metaclasses import ServerVerifier
-from services.common import get_response, send_message, login_required
+from services.common import get_response, send_request, login_required
 
 LOGGER = logging.getLogger("server")
 
@@ -63,10 +63,10 @@ class Server(Thread, metaclass=ServerVerifier):
                 LOGGER.info(f"Established connection with {client_address}")
                 self.clients.append(client)
 
-            recv_data, send_data, error = [], [], []
+            recv_data = []
             try:
                 if self.clients:
-                    recv_data, send_data, errors = select(
+                    recv_data, self.listen_sockets, self.error_sockets = select(
                         self.clients, self.clients, [], 0
                     )
             except OSError as e:
@@ -115,7 +115,6 @@ class Server(Thread, metaclass=ServerVerifier):
             self.messages.clear()
 
     def remove_client(self, client: socket):
-        LOGGER.info(f"Client {client.getpeername()} disconnect")
         for name in self.names:
             if self.names[name] == client:
                 self.database.user_logout(name)
@@ -128,7 +127,7 @@ class Server(Thread, metaclass=ServerVerifier):
         if message[variables.RECEIVER] in self.names:
             if self.names[message[variables.RECEIVER]] in self.listen_sockets:
                 try:
-                    send_message(self.names[message[variables.RECEIVER]],
+                    send_request(self.names[message[variables.RECEIVER]],
                                  message)
                     LOGGER.info(
                         f"Message's send to {message[variables.RECEIVER]} "
@@ -169,7 +168,7 @@ class Server(Thread, metaclass=ServerVerifier):
                             )
                             self.process_message(request)
                             try:
-                                send_message(client, variables.RESPONSE_200)
+                                send_request(client, variables.RESPONSE_200)
                             except OSError:
                                 self.remove_client(client)
                     else:
@@ -178,7 +177,7 @@ class Server(Thread, metaclass=ServerVerifier):
                             variables.ERROR
                         ] = "Current user isn't registered on server"
                         try:
-                            send_message(client, response)
+                            send_request(client, response)
                         except OSError:
                             pass
                 case variables.EXIT:
@@ -201,7 +200,7 @@ class Server(Thread, metaclass=ServerVerifier):
                             request[variables.USER]
                         )
                         try:
-                            send_message(client, response)
+                            send_request(client, response)
                         except OSError:
                             self.remove_client(client)
                 case variables.ADD_CONTACT:
@@ -216,7 +215,7 @@ class Server(Thread, metaclass=ServerVerifier):
                         )
                         self.names[request[variables.ACCOUNT_NAME]] = None
                         try:
-                            send_message(client, variables.RESPONSE_200)
+                            send_request(client, variables.RESPONSE_200)
                         except OSError:
                             self.remove_client(client)
                 case variables.DEL_CONTACT:
@@ -226,7 +225,7 @@ class Server(Thread, metaclass=ServerVerifier):
                             request[variables.ACCOUNT_NAME]
                         )
                         try:
-                            send_message(client, variables.RESPONSE_200)
+                            send_request(client, variables.RESPONSE_200)
                         except OSError:
                             self.remove_client(client)
                 case variables.USERS_REQUEST:
@@ -240,7 +239,7 @@ class Server(Thread, metaclass=ServerVerifier):
                             user[0] for user in self.database.users_list()
                         ]
                         try:
-                            send_message(client, response)
+                            send_request(client, response)
                         except OSError:
                             self.remove_client(client)
                 case variables.PUBLIC_KEY_REQUEST:
@@ -251,7 +250,7 @@ class Server(Thread, metaclass=ServerVerifier):
                         )
                         if response[variables.DATA]:
                             try:
-                                send_message(client, response)
+                                send_request(client, response)
                             except OSError:
                                 self.remove_client(client)
                         else:
@@ -260,14 +259,14 @@ class Server(Thread, metaclass=ServerVerifier):
                                 variables.ERROR
                             ] = "Pubkey doesn't exist from current user"
                             try:
-                                send_message(client, response)
+                                send_request(client, response)
                             except OSError:
                                 self.remove_client(client)
         else:
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Invalid request"
             try:
-                send_message(client, response)
+                send_request(client, response)
             except OSError:
                 self.remove_client(client)
 
@@ -278,7 +277,7 @@ class Server(Thread, metaclass=ServerVerifier):
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Current username exists"
             try:
-                send_message(sock, response)
+                send_request(sock, response)
             except OSError:
                 pass
             self.clients.remove(sock)
@@ -289,7 +288,7 @@ class Server(Thread, metaclass=ServerVerifier):
             response = variables.RESPONSE_400
             response[variables.ERROR] = "Current user is not registered"
             try:
-                send_message(sock, response)
+                send_request(sock, response)
             except OSError:
                 pass
             self.clients.remove(sock)
@@ -306,7 +305,7 @@ class Server(Thread, metaclass=ServerVerifier):
             )
             digest = hash.digest()
             try:
-                send_message(sock, message_auth)
+                send_request(sock, message_auth)
                 response = get_response(sock)
             except OSError as e:
                 LOGGER.debug("Error in auth, data:", exc_info=e)
@@ -323,7 +322,7 @@ class Server(Thread, metaclass=ServerVerifier):
                 ] = sock
                 client_ip, client_port = sock.getpeername()
                 try:
-                    send_message(sock, variables.RESPONSE_200)
+                    send_request(sock, variables.RESPONSE_200)
                 except OSError:
                     self.remove_client(
                         request[variables.USER][variables.ACCOUNT_NAME])
@@ -337,7 +336,7 @@ class Server(Thread, metaclass=ServerVerifier):
                 response = variables.RESPONSE_400
                 response[variables.ERROR] = "Incorrect password"
                 try:
-                    send_message(sock, response)
+                    send_request(sock, response)
                 except OSError:
                     pass
                 self.clients.remove(sock)
@@ -346,6 +345,6 @@ class Server(Thread, metaclass=ServerVerifier):
     def service_update_lists(self):
         for client in self.names:
             try:
-                send_message(self.names[client], variables.RESPONSE_205)
+                send_request(self.names[client], variables.RESPONSE_205)
             except OSError:
                 self.remove_client(self.names[client])

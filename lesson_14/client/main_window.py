@@ -177,7 +177,7 @@ class ClientMainWindow(QMainWindow):
         if not message_text:
             return
         try:
-            self.transport.send_message(self.current_chat, message_text)
+            self.transport.send_request(self.current_chat, message_text)
             pass
         except ServerError as e:
             self.messages.critical(self, "Error", e.text)

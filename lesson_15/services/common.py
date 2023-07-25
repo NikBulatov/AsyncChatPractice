@@ -86,7 +86,7 @@ def get_response(client: socket) -> dict:
 
 
 @log
-def send_message(sock: socket, message: dict) -> None:
+def send_request(sock: socket, message: dict) -> None:
     """
     The function of encoding and sending a message,
     it takes a dictionary and sends it.

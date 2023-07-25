@@ -76,12 +76,12 @@ class ClientDatabase:
         self.session.commit()
 
     def save_message(self,
-                     contact: Contacts,
-                     direction: Contacts,
+                     contact: str,
+                     direction: str,
                      message: str):
         message_row = self.MessageHistory()
-        message_row.contact = contact.id
-        message_row.direction = direction.id
+        message_row.contact = contact
+        message_row.direction = direction
         message_row.body = message
         self.session.add(message_row)
         self.session.commit()
