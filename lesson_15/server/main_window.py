@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow, QApplication, QLabel, QTableView
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction
 from PyQt6.QtCore import QTimer
-from .start_window import StatisticWindow
+from .statistic_window import StatisticWindow
 from .config_window import ConfigWindow
 from .add_user import RegisterUser
 from .remove_user import DelUserDialog

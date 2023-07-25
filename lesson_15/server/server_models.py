@@ -142,7 +142,7 @@ class ServerStorage:
         self.session.query(self.AllUsers).filter_by(name=name).delete()
         self.session.commit()
 
-    def get_hash(self, name: str) -> str:
+    def get_hash(self, name: str) -> bytes:
         """
         Return the user's password hash
         :param name: a username
