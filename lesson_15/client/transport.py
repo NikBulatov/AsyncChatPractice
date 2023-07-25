@@ -85,8 +85,6 @@ class Client(Thread, QObject):
         passwd_hash = hashlib.pbkdf2_hmac("sha512", passwd_bytes, salt, 10000)
         passwd_hash_string = binascii.hexlify(passwd_hash)
 
-        LOGGER.debug(f"Passwd hash ready: {passwd_hash_string}")
-
         pubkey = self.keys.publickey().export_key().decode("ascii")
 
         with socket_lock:
@@ -138,10 +136,8 @@ class Client(Thread, QObject):
             case variables.MESSAGE:
                 request[variables.ACTION] = variables.MESSAGE
                 request[variables.SENDER] = self.username
-                request[variables.ACTION] = variables.MESSAGE
                 try:
                     send_message(self.transport, request)
-                    LOGGER.info(f"The message is send to {receiver}")
                 except Exception as e:
                     print(e)
                     LOGGER.critical("Connection is lost")

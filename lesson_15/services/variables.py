@@ -17,7 +17,6 @@ ERROR = "error"
 RESPONSE = "response"
 MESSAGE_TEXT = "mess_text"
 USER_LOGIN = "user_login"
-USER_ID = "user_id"
 DATA = "bin"
 PUBLIC_KEY = "pubkey"
 

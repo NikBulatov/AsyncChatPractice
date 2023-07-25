@@ -210,7 +210,7 @@ class ClientMainWindow(QMainWindow):
         else:
             self.database.del_contact(selected)
             self.clients_list_update()
-            LOGGER.info(f"Успешно удалён контакт {selected}")
+            LOGGER.info(f"Contact has been deleted successfully {selected}")
             self.messages.information(self, "Success",
                                       "Successfully contact deleted.")
             item.close()

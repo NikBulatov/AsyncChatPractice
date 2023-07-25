@@ -32,7 +32,7 @@ class Ui_MainClientWindow(object):
         self.text_message.setGeometry(QtCore.QRect(300, 360, 441, 71))
         self.text_message.setObjectName("text_message")
         self.label_new_message = QtWidgets.QLabel(parent=self.centralwidget)
-        self.label_new_message.setGeometry(QtCore.QRect(300, 330, 171, 16))
+        self.label_new_message.setGeometry(QtCore.QRect(300, 330, 175, 16))
         self.label_new_message.setObjectName("label_new_message")
         self.list_contacts = QtWidgets.QListView(parent=self.centralwidget)
         self.list_contacts.setGeometry(QtCore.QRect(10, 20, 251, 411))

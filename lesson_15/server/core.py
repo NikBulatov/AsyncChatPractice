@@ -144,7 +144,7 @@ class Server(Thread, metaclass=ServerVerifier):
                 self.remove_client(self.names[message[variables.RECEIVER]])
         else:
             LOGGER.error(
-                f'User "{message[variables.RECEIVER]}" isn\'t registered,'
+                f"User '{message[variables.RECEIVER]}' isn't registered,"
                 f" message isn't send"
             )
 
@@ -214,6 +214,7 @@ class Server(Thread, metaclass=ServerVerifier):
                             request[variables.USER],
                             request[variables.ACCOUNT_NAME]
                         )
+                        self.names[request[variables.ACCOUNT_NAME]] = None
                         try:
                             send_message(client, variables.RESPONSE_200)
                         except OSError:
@@ -232,8 +233,7 @@ class Server(Thread, metaclass=ServerVerifier):
                     if (
                             variables.ACCOUNT_NAME in request
                             and self.names[
-                                request[variables.ACCOUNT_NAME]
-                            ] == client
+                                request[variables.ACCOUNT_NAME]] == client
                     ):
                         response = variables.RESPONSE_202
                         response[variables.LIST_INFO] = [
