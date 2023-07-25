@@ -1,0 +1,77 @@
+lesson\_15.client package
+=========================
+
+Submodules
+----------
+
+lesson\_15.client.add\_contact module
+-------------------------------------
+
+.. automodule:: lesson_15.client.add_contact
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.client.client\_models module
+---------------------------------------
+
+.. automodule:: lesson_15.client.client_models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.client.del\_contact module
+-------------------------------------
+
+.. automodule:: lesson_15.client.del_contact
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.client.helpers module
+--------------------------------
+
+.. automodule:: lesson_15.client.helpers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.client.main\_window module
+-------------------------------------
+
+.. automodule:: lesson_15.client.main_window
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.client.main\_window\_conv module
+-------------------------------------------
+
+.. automodule:: lesson_15.client.main_window_conv
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.client.start\_dialog module
+--------------------------------------
+
+.. automodule:: lesson_15.client.start_dialog
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.client.transport module
+----------------------------------
+
+.. automodule:: lesson_15.client.transport
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: lesson_15.client
+   :members:
+   :undoc-members:
+   :show-inheritance:

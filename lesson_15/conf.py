@@ -5,6 +5,11 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+import sys
+import os
+
+path = os.path.abspath(".")
+sys.path.insert(0, path)
 
 project = 'AsyncChatPractice'
 copyright = "2023, GB's student Nikita Bulatov"
