@@ -4,7 +4,6 @@ import argparse
 import logging
 import configparser
 from PyQt6.QtWidgets import QApplication
-from logs import server_log_config
 from services import variables
 from services.common import log
 from server.core import Server

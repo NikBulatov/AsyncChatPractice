@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-sys.path.append("../")
+sys.path.append("../../")
 
 from services.errors import ServerError, NonDictionaryInputError
 from services.variables import (

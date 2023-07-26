@@ -169,3 +169,6 @@ examples/
 
 # Keys
 *.key
+
+# configs
+*.ini

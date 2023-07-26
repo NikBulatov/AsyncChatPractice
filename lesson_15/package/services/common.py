@@ -53,7 +53,7 @@ def login_required(func: callable) -> callable:
 
     @wraps(func)
     def checker(*args, **kwargs):
-        sys.path.append("../")
+        sys.path.append("../../")
         from server.core import Server
 
         if isinstance(args[0], Server):

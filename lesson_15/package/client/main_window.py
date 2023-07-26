@@ -12,7 +12,7 @@ from .del_contact import DelContactDialog
 from .main_window_conv import Ui_MainClientWindow
 from .transport import Client
 
-sys.path.append("../")
+sys.path.append("../../")
 
 from services.errors import ServerError
 from services import variables

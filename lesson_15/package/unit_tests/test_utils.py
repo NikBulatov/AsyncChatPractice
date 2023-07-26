@@ -2,7 +2,7 @@ import json
 import unittest
 import sys
 
-sys.path.append("../")
+sys.path.append("../../")
 
 from services.variables import (
     RESPONSE,
