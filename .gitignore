@@ -172,3 +172,4 @@ examples/
 
 # configs
 *.ini
+*.pypirc

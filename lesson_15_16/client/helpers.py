@@ -4,7 +4,7 @@ import logging
 import argparse
 from socket import socket
 
-sys.path.append("../../")
+sys.path.append("../")
 
 from services.common import log, send_request
 from services.variables import *

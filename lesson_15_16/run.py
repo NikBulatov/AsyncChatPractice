@@ -1,9 +1,9 @@
 import subprocess
 
+PROCESSES = []
+
 
 def main():
-    PROCESSES = []
-
     while True:
         action = input(
             """Choose action:

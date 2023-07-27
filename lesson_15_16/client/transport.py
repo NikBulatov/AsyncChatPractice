@@ -10,7 +10,7 @@ from threading import Thread, Lock
 from Crypto.PublicKey.RSA import RsaKey
 from PyQt6.QtCore import QObject, pyqtSignal
 
-sys.path.append("../../")
+sys.path.append("../")
 from logs import client_log_config
 from services.errors import *
 from services.variables import *
