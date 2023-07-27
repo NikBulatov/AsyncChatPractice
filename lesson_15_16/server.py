@@ -55,8 +55,7 @@ def main():
 
     database = ServerStorage(
         os.path.join(
-            config["SETTINGS"]["Database_path"],
-            config["SETTINGS"]["Database_file"]
+            os.path.abspath(config["SETTINGS"]["Database_file"])
         )
     )
 
