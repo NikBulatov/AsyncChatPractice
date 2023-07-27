@@ -1,0 +1,77 @@
+lesson\_15.server package
+=========================
+
+Submodules
+----------
+
+lesson\_15.server.add\_user module
+----------------------------------
+
+.. automodule:: lesson_15.server.add_user
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.server.config\_window module
+---------------------------------------
+
+.. automodule:: lesson_15.server.config_window
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.server.core module
+-----------------------------
+
+.. automodule:: lesson_15.server.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.server.main\_window module
+-------------------------------------
+
+.. automodule:: lesson_15.server.main_window
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.server.remove\_user module
+-------------------------------------
+
+.. automodule:: lesson_15.server.remove_user
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.server.server\_models module
+---------------------------------------
+
+.. automodule:: lesson_15.server.server_models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.server.server\_ui module
+-----------------------------------
+
+.. automodule:: lesson_15.server.server_ui
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.server.statistic\_window module
+------------------------------------------
+
+.. automodule:: lesson_15.server.statistic_window
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: lesson_15.server
+   :members:
+   :undoc-members:
+   :show-inheritance:

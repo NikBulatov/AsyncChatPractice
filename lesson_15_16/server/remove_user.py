@@ -3,7 +3,6 @@ from PyQt6.QtCore import Qt
 
 
 class DelUserDialog(QDialog):
-
     def __init__(self, database, server):
         super().__init__()
         self.database = database
@@ -14,8 +13,7 @@ class DelUserDialog(QDialog):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setModal(True)
 
-        self.selector_label = QLabel(
-            "Choose user to remove:", self)
+        self.selector_label = QLabel("Choose user to remove:", self)
         self.selector_label.setFixedSize(200, 20)
         self.selector_label.move(10, 0)
 
@@ -35,11 +33,18 @@ class DelUserDialog(QDialog):
 
         self.all_users_fill()
 
-    def all_users_fill(self):
-        self.selector.addItems([item[0]
-                                for item in self.database.users_list])
+    def all_users_fill(self) -> None:
+        """
+        Add all active users in selector
+        :return:
+        """
+        self.selector.addItems([item[0] for item in self.database.users_list])
 
-    def remove_user(self):
+    def remove_user(self) -> None:
+        """
+        Trigger on OK button to remove user
+        :return:
+        """
         self.database.remove_user(self.selector.currentText())
         if self.selector.currentText() in self.server.names:
             sock = self.server.names[self.selector.currentText()]

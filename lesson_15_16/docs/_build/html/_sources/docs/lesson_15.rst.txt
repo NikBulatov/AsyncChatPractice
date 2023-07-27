@@ -1,0 +1,57 @@
+lesson\_15 package
+==================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   lesson_15.client
+   lesson_15.logs
+   lesson_15.server
+   lesson_15.services
+   lesson_15.unit_tests
+
+Submodules
+----------
+
+lesson\_15.client module
+------------------------
+
+.. automodule:: lesson_15.client
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.conf module
+----------------------
+
+.. automodule:: lesson_15.conf
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.run module
+---------------------
+
+.. automodule:: lesson_15.run
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.server module
+------------------------
+
+.. automodule:: lesson_15.server
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: lesson_15
+   :members:
+   :undoc-members:
+   :show-inheritance:

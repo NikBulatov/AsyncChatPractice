@@ -1,0 +1,53 @@
+lesson\_15.services package
+===========================
+
+Submodules
+----------
+
+lesson\_15.services.common module
+---------------------------------
+
+.. automodule:: lesson_15.services.common
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.services.descriptors module
+--------------------------------------
+
+.. automodule:: lesson_15.services.descriptors
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.services.errors module
+---------------------------------
+
+.. automodule:: lesson_15.services.errors
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.services.metaclasses module
+--------------------------------------
+
+.. automodule:: lesson_15.services.metaclasses
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.services.variables module
+------------------------------------
+
+.. automodule:: lesson_15.services.variables
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: lesson_15.services
+   :members:
+   :undoc-members:
+   :show-inheritance:

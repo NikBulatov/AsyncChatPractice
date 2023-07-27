@@ -1,0 +1,29 @@
+lesson\_15.logs package
+=======================
+
+Submodules
+----------
+
+lesson\_15.logs.client\_log\_config module
+------------------------------------------
+
+.. automodule:: lesson_15.logs.client_log_config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lesson\_15.logs.server\_log\_config module
+------------------------------------------
+
+.. automodule:: lesson_15.logs.server_log_config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: lesson_15.logs
+   :members:
+   :undoc-members:
+   :show-inheritance:
