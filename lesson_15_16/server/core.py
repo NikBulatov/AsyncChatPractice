@@ -9,8 +9,8 @@ from socket import socket, AF_INET, SOCK_STREAM
 from .server_models import ServerStorage
 
 sys.path.append("../")
-from logs import server_log_config
 
+from logs import server_log_config
 from services import variables
 from services.descriptors import Port
 from services.metaclasses import ServerVerifier
